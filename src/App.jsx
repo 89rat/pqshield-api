@@ -1,9 +1,9 @@
 import React from 'react'
-import EdgeSecurityApp from './EdgeSecurityApp'
+import { UniversalDashboard } from './sentinel/UniversalDashboard'
 import './App.css'
 
 function App() {
-  return <EdgeSecurityApp />
+  return <UniversalDashboard />
 }
 
 export default App
