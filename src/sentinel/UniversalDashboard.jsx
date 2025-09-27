@@ -21,6 +21,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { SNNAdaptiveDetector } from './neural/SNNAdaptiveDetector';
 import { ANNThreatClassifier } from './neural/ANNThreatClassifier';
 import { MobileFraudProtection } from './financial/MobileFraudProtection';
+import MobileNeuralEngine from './core/MobileNeuralEngine';
 
 export function UniversalDashboard() {
   const [protectionMode, setProtectionMode] = useState('auto');
@@ -45,12 +46,23 @@ export function UniversalDashboard() {
   const snnRef = useRef(null);
   const annRef = useRef(null);
   const fraudProtectionRef = useRef(null);
+  const mobileEngineRef = useRef(null);
+  const [resourceMetrics, setResourceMetrics] = useState({
+    ram: 0,
+    cpu: 0,
+    battery: 100,
+    modelsLoaded: 0,
+    deviceProfile: 'unknown'
+  });
   
   useEffect(() => {
     // Initialize neural networks
     snnRef.current = new SNNAdaptiveDetector();
     annRef.current = new ANNThreatClassifier();
     fraudProtectionRef.current = new MobileFraudProtection();
+    
+    // Initialize mobile neural engine
+    initializeMobileEngine();
     
     // Start real-time monitoring
     const monitor = setInterval(monitorThreats, 2000); // 2-second updates
@@ -61,6 +73,33 @@ export function UniversalDashboard() {
       clearInterval(metricsUpdate);
     };
   }, []);
+
+  const initializeMobileEngine = async () => {
+    try {
+      const engine = new MobileNeuralEngine();
+      await engine.initialize();
+      mobileEngineRef.current = engine;
+      
+      // Monitor resources
+      const resourceMonitor = setInterval(async () => {
+        if (engine.resourceMonitor) {
+          const metrics = await engine.resourceMonitor.check();
+          const stats = engine.getProtectionStats();
+          setResourceMetrics({
+            ram: metrics.ram.current,
+            cpu: metrics.cpu.current,
+            battery: metrics.battery.level,
+            modelsLoaded: stats.modelsLoaded,
+            deviceProfile: stats.deviceProfile
+          });
+        }
+      }, 1000);
+      
+      return () => clearInterval(resourceMonitor);
+    } catch (error) {
+      console.error('Failed to initialize mobile engine:', error);
+    }
+  };
   
   const protectionModes = [
     {

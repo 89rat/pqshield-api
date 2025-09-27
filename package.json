@@ -1,8 +1,8 @@
 {
-  "name": "snn-ann-edge-security-clean",
+  "name": "snn-ann-universal-sentinel",
   "private": false,
   "version": "2.0.0",
-  "description": "Clean SNN/ANN Hybrid Neural Network Edge Security System",
+  "description": "Universal Sentinel - Mobile-Optimized AI Protection Platform",
   "keywords": [
     "snn",
     "ann",
@@ -28,7 +28,10 @@
     "debug": "vite --debug",
     "debug:build": "vite build --debug",
     "security:audit": "npm audit --audit-level high",
-    "quality:check": "npm run lint && npm run test:coverage && npm run security:audit"
+    "quality:check": "npm run lint && npm run test:coverage && npm run security:audit",
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "worker:dev": "wrangler dev --local",
+    "analyze": "vite build --mode analyze"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -79,7 +82,15 @@
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.7",
     "vaul": "^1.1.2",
-    "zod": "^3.24.4"
+    "zod": "^3.24.4",
+    "@tensorflow/tfjs": "^4.15.0",
+    "@tensorflow/tfjs-tflite": "^0.0.1-alpha.10",
+    "@mediapipe/tasks-vision": "^0.10.8",
+    "comlink": "^4.4.1",
+    "idb": "^8.0.0",
+    "workbox-core": "^7.0.0",
+    "workbox-precaching": "^7.0.0",
+    "compromise": "^14.10.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
