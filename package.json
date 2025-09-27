@@ -31,7 +31,18 @@
     "quality:check": "npm run lint && npm run test:coverage && npm run security:audit",
     "deploy": "npm run build && wrangler pages deploy dist",
     "worker:dev": "wrangler dev --local",
-    "analyze": "vite build --mode analyze"
+    "analyze": "vite build --mode analyze",
+    "bridge:init": "node infrastructure/unified-bridge/init-bridge.js",
+    "bridge:deploy": "./infrastructure/unified-bridge/deploy-all.sh",
+    "bridge:monitor": "node infrastructure/unified-bridge/monitor-all.js",
+    "bridge:mobile-update": "cd mobile_app && flutter build appbundle --release && cd .. && npm run bridge:play-upload",
+    "bridge:firebase-deploy": "firebase deploy",
+    "bridge:cloudflare-deploy": "wrangler deploy --env production",
+    "bridge:play-upload": "node infrastructure/unified-bridge/google-play/upload-app.js",
+    "bridge:status": "node infrastructure/unified-bridge/check-status.js",
+    "bridge:logs": "node infrastructure/unified-bridge/aggregate-logs.js",
+    "bridge:backup": "node infrastructure/unified-bridge/backup-data.js",
+    "bridge:restore": "node infrastructure/unified-bridge/restore-data.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
