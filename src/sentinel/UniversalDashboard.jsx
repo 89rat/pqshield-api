@@ -22,8 +22,10 @@ import { SNNAdaptiveDetector } from './neural/SNNAdaptiveDetector';
 import { ANNThreatClassifier } from './neural/ANNThreatClassifier';
 import { MobileFraudProtection } from './financial/MobileFraudProtection';
 import MobileNeuralEngine from './core/MobileNeuralEngine';
+import ViralShareCard from '../components/ViralShareCard';
+import LiveGlobalCounter from '../components/LiveGlobalCounter';
 
-export function UniversalDashboard() {
+export function UniversalDashboard({ userMetrics = {} }) {
   const [protectionMode, setProtectionMode] = useState('auto');
   const [threats, setThreats] = useState([]);
   const [userProfile, setUserProfile] = useState({ type: 'standard', age: 25 });
@@ -448,6 +450,16 @@ export function UniversalDashboard() {
                 </CardContent>
               </Card>
             </div>
+            
+            {/* Live Global Counter */}
+            <LiveGlobalCounter />
+            
+            {/* Viral Share Card */}
+            <ViralShareCard metrics={{
+              threatsBlocked: userMetrics.threatsBlocked || realTimeMetrics.threatsBlocked,
+              moneySaved: userMetrics.moneySaved || realTimeMetrics.moneySaved,
+              protectionStreak: userMetrics.protectionStreak || 7
+            }} />
             
             {/* Threat Detection Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
