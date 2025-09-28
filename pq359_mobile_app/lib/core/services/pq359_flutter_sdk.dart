@@ -15,13 +15,13 @@ import '../utils/logger.dart';
 import '../models/threat_models.dart';
 import '../models/quantum_models.dart';
 
-/// PQShield Flutter SDK - Real Neural Network Integration
+/// PQ359 Flutter SDK - Real Neural Network Integration
 /// Provides edge computing capabilities with cloud escalation
-class PQShieldFlutterSDK {
-  static PQShieldFlutterSDK? _instance;
-  static PQShieldFlutterSDK get instance => _instance ??= PQShieldFlutterSDK._();
+class PQ359FlutterSDK {
+  static PQ359FlutterSDK? _instance;
+  static PQ359FlutterSDK get instance => _instance ??= PQ359FlutterSDK._();
   
-  PQShieldFlutterSDK._();
+  PQ359FlutterSDK._();
 
   // Core Components
   late Interpreter _snnModel;
@@ -53,12 +53,12 @@ class PQShieldFlutterSDK {
   Stream<ThreatEvent> get threatStream => _threatStreamController.stream;
   Stream<PerformanceMetrics> get performanceStream => _performanceStreamController.stream;
 
-  /// Initialize the PQShield SDK
+  /// Initialize the PQ359 SDK
   Future<void> initialize({required String apiKey}) async {
     if (_isInitialized) return;
     
     try {
-      AppLogger.info('Initializing PQShield Flutter SDK...');
+      AppLogger.info('Initializing PQ359 Flutter SDK...');
       
       // Configure HTTP client
       _dio.options.headers['X-API-Key'] = apiKey;
@@ -76,10 +76,10 @@ class PQShieldFlutterSDK {
       _startPerformanceMonitoring();
       
       _isInitialized = true;
-      AppLogger.info('PQShield SDK initialized successfully');
+      AppLogger.info('PQ359 SDK initialized successfully');
       
     } catch (e, stackTrace) {
-      AppLogger.error('Failed to initialize PQShield SDK', e, stackTrace);
+      AppLogger.error('Failed to initialize PQ359 SDK', e, stackTrace);
       rethrow;
     }
   }
@@ -223,7 +223,7 @@ class PQShieldFlutterSDK {
       // Add differential privacy
       final privateUpdates = _addDifferentialPrivacy(localUpdates);
       
-      // Upload to PQShield federated server
+      // Upload to PQ359 federated server
       await _dio.post('/federated/contribute', data: {
         'updates': privateUpdates,
         'device_tier': await _getDeviceTier(),

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Shield, Zap, Users, Gift, TrendingUp, AlertTriangle, Star, Trophy, Share2, Bell, Settings, Eye, EyeOff, Download, Upload, Wifi, Lock, Unlock, Play, Pause, RotateCcw, Search, FileText, Mail, Globe, CreditCard, Camera, Mic, Phone, MessageSquare, Calendar, Target, Brain, Database, CloudLightning, Cpu, Network, ShoppingCart, Heart, Flag, UserPlus, Award, Gamepad2, Bot, Sparkles, Rocket, Crown, Swords, Gem, Timer, MapPin, ChevronRight, ChevronLeft, RefreshCw, CheckCircle, XCircle, Info, Smartphone, Laptop, Monitor, Tv, Watch, Car } from 'lucide-react';
 
-const UltimateViralPQShieldApp = () => {
+const UltimateViralPQ359App = () => {
   // Enhanced user state with complete progression system
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('pqshield_user');
+    const saved = localStorage.getItem('pq359_user');
     return saved ? JSON.parse(saved) : {
       id: 'user_' + Date.now(),
       username: 'QuantumDefender' + Math.floor(Math.random() * 1000),
@@ -48,7 +48,7 @@ const UltimateViralPQShieldApp = () => {
 
   const [threats, setThreats] = useState([]);
   const [achievements, setAchievements] = useState(() => {
-    const saved = localStorage.getItem('pqshield_achievements');
+    const saved = localStorage.getItem('pq359_achievements');
     return saved ? JSON.parse(saved) : [];
   });
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -184,12 +184,12 @@ const UltimateViralPQShieldApp = () => {
 
   // Save user data to localStorage
   useEffect(() => {
-    localStorage.setItem('pqshield_user', JSON.stringify(user));
+    localStorage.setItem('pq359_user', JSON.stringify(user));
   }, [user]);
 
   // Save achievements to localStorage
   useEffect(() => {
-    localStorage.setItem('pqshield_achievements', JSON.stringify(achievements));
+    localStorage.setItem('pq359_achievements', JSON.stringify(achievements));
   }, [achievements]);
 
   // Core functions
@@ -596,7 +596,7 @@ const UltimateViralPQShieldApp = () => {
           <div className="flex items-center space-x-2">
             <Shield className="text-white" size={24} />
             <div>
-              <span className="font-bold text-lg">PQShield</span>
+              <span className="font-bold text-lg">PQ359</span>
               <div className="text-xs opacity-90">Quantum Security Gaming</div>
             </div>
           </div>
@@ -680,4 +680,4 @@ const UltimateViralPQShieldApp = () => {
   );
 };
 
-export default UltimateViralPQShieldApp;
+export default UltimateViralPQ359App;

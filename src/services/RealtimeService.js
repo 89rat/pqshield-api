@@ -1,5 +1,5 @@
 /**
- * Real-time WebSocket Service for PQShield API
+ * Real-time WebSocket Service for PQ359 API
  * Live threat monitoring, scan updates, and data processing
  */
 
@@ -50,7 +50,7 @@ class RealtimeService {
   getWebSocketUrl() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = process.env.NODE_ENV === 'production' 
-      ? 'wss://pqshieldapi.com/ws' 
+      ? 'wss://pq359api.com/ws' 
       : 'ws://localhost:8080/ws';
     return host;
   }
@@ -67,7 +67,7 @@ class RealtimeService {
         this.emit('connection_status', { status: 'connected', timestamp: new Date() });
         
         // Send authentication if available
-        const authToken = localStorage.getItem('pqshield_auth_token');
+        const authToken = localStorage.getItem('pq359_auth_token');
         if (authToken) {
           this.send('auth', { token: authToken });
         }

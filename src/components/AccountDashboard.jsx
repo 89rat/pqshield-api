@@ -1,5 +1,5 @@
 /**
- * Account Dashboard Component for PQShield API
+ * Account Dashboard Component for PQ359 API
  * Comprehensive user account management interface
  */
 
@@ -224,7 +224,7 @@ const AccountDashboard = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `pqshield-data-${Date.now()}.json`;
+      a.download = `pq359-data-${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
       
@@ -531,7 +531,7 @@ const AccountDashboard = () => {
                 </div>
                 
                 <div className="api-info">
-                  <p>Use this API key to authenticate requests to the PQShield API.</p>
+                  <p>Use this API key to authenticate requests to the PQ359 API.</p>
                   <p>Keep your API key secure and never share it publicly.</p>
                 </div>
               </div>

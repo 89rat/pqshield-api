@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// PQShield Production App Theme
+/// PQ359 Production App Theme
 /// Complete design system with quantum-inspired branding
 class AppTheme {
   // ============ Brand Colors ============

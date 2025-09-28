@@ -1,5 +1,5 @@
 /**
- * PQShield Security Scan API
+ * PQ359 Security Scan API
  * Real-time code vulnerability scanning with neural network analysis
  * Integrates with Cloudflare Workers for edge deployment
  */

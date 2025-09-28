@@ -8,8 +8,8 @@
 - [x] Mobile optimization complete
 
 ## Deployment (Execute Now 🚀)
-- [ ] Deploy to Cloudflare Pages: `npx wrangler pages deploy dist --project-name=pqshield-api`
-- [ ] Configure custom domain: pqshieldapi.com
+- [ ] Deploy to Cloudflare Pages: `npx wrangler pages deploy dist --project-name=pq359-api`
+- [ ] Configure custom domain: pq359api.com
 - [ ] Verify SSL certificate active
 - [ ] Test all viral features on live site
 - [ ] Activate real-time monitoring

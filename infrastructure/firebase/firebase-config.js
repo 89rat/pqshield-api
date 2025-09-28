@@ -1,5 +1,5 @@
 /**
- * Firebase Configuration for PQShield API
+ * Firebase Configuration for PQ359 API
  * Real-time database, authentication, and cloud functions setup
  */
 
@@ -14,9 +14,9 @@ import { getPerformance } from 'firebase/performance';
 // Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY || "demo-api-key",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "pqshield-api.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "pqshield-api",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "pqshield-api.appspot.com",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "pq359-api.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "pq359-api",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "pq359-api.appspot.com",
   messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
   appId: process.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef",
   measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || "G-XXXXXXXXXX"

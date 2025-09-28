@@ -1,4 +1,4 @@
-// lib/viral_gamified_pqshield_app.dart
+// lib/viral_gamified_pq359_app.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:confetti/confetti.dart';
@@ -13,13 +13,13 @@ import 'package:crypto/crypto.dart';
 // Combines quantum security with addictive gaming mechanics
 // Designed for k>1 viral growth in 30 days
 
-class ViralGamefiedPQShieldApp extends StatelessWidget {
-  const ViralGamefiedPQShieldApp({Key? key}) : super(key: key);
+class ViralGamefiedPQ359App extends StatelessWidget {
+  const ViralGamefiedPQ359App({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PQShield - Quantum Security Game',
+      title: 'PQ359 - Quantum Security Game',
       theme: ThemeData(
         primarySwatch: Colors.purple,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -1150,7 +1150,7 @@ class _GameDashboardState extends State<GameDashboard>
   void _inviteFriends() async {
     final referralLink = await _viralEngine.generateReferralLink(_playerProfile!.userId);
     final shareText = '''
-🛡️ Join me on PQShield - the world's first gamified quantum security app! 🎮
+🛡️ Join me on PQ359 - the world's first gamified quantum security app! 🎮
 
 I'm Level ${_playerProfile!.level} ${_playerProfile!.title} protecting against quantum threats while earning rewards!
 
@@ -1161,7 +1161,7 @@ Use my referral code and we both get:
 
 Join the quantum security revolution: $referralLink
 
-#PQShield #QuantumSecurity #JoinMyTeam #CyberSecurity
+#PQ359 #QuantumSecurity #JoinMyTeam #CyberSecurity
 ''';
     
     await Share.share(shareText);
@@ -1170,7 +1170,7 @@ Join the quantum security revolution: $referralLink
   
   void _shareViralContent() async {
     final shareText = '''
-🚀 I'm dominating the quantum security game on PQShield! 🛡️
+🚀 I'm dominating the quantum security game on PQ359! 🛡️
 
 Current Stats:
 🏆 Level ${_playerProfile!.level} ${_playerProfile!.title}
@@ -1182,7 +1182,7 @@ The future of cybersecurity is here and it's gamified! 🎮
 
 Join me: ${await _viralEngine.generateReferralLink(_playerProfile!.userId)}
 
-#PQShield #QuantumSecurity #CyberGaming #FutureOfSecurity
+#PQ359 #QuantumSecurity #CyberGaming #FutureOfSecurity
 ''';
     
     await Share.share(shareText);
@@ -1193,14 +1193,14 @@ Join me: ${await _viralEngine.generateReferralLink(_playerProfile!.userId)}
     final shareText = '''
 🎉 MILESTONE ACHIEVED! 🎉
 
-Just reached Level ${profile.level} in PQShield! 🛡️
+Just reached Level ${profile.level} in PQ359! 🛡️
 
 I'm now a ${profile.title} protecting against quantum threats while earning epic rewards! The gamification makes cybersecurity actually fun! 🎮
 
 Want to join the quantum security revolution?
 Use my code: ${await _viralEngine.generateReferralLink(profile.userId)}
 
-#PQShield #LevelUp #QuantumSecurity #Achievement
+#PQ359 #LevelUp #QuantumSecurity #Achievement
 ''';
     
     await Share.share(shareText);
@@ -1211,13 +1211,13 @@ Use my code: ${await _viralEngine.generateReferralLink(profile.userId)}
     final shareText = '''
 ⚠️ QUANTUM THREAT BLOCKED! ⚠️
 
-My PQShield just protected me from a ${threat.level.name.toUpperCase()} level ${threat.type} attack! 🛡️
+My PQ359 just protected me from a ${threat.level.name.toUpperCase()} level ${threat.type} attack! 🛡️
 
 This is why everyone needs quantum-resistant security. The threats are real and they're happening NOW!
 
 Protect yourself: ${await _viralEngine.generateReferralLink(_playerProfile!.userId)}
 
-#QuantumThreat #StaySecure #PQShield #CyberSecurity
+#QuantumThreat #StaySecure #PQ359 #CyberSecurity
 ''';
     
     await Share.share(shareText);
@@ -1506,7 +1506,7 @@ class ViralGamificationEngine {
 class ViralGrowthEngine {
   Future<String> generateReferralLink(String userId) async {
     final code = _generateReferralCode(userId);
-    return 'https://pqshield.app/join?ref=$code&reward=100xp';
+    return 'https://pq359.app/join?ref=$code&reward=100xp';
   }
   
   String _generateReferralCode(String userId) {

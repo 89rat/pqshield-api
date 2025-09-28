@@ -196,7 +196,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           ),
         ),
         title: const Text(
-          'PQShield Protection',
+          'PQ359 Protection',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,

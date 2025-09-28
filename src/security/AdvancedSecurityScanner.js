@@ -1,5 +1,5 @@
 /**
- * PQShield Advanced Security Scanner
+ * PQ359 Advanced Security Scanner
  * Real-world vulnerability detection with SNN/ANN hybrid neural networks
  * Enhanced version of the provided security scanner with quantum-resistant features
  */
@@ -548,5 +548,5 @@ export class AdvancedSecurityScanner {
   }
 }
 
-// Export for use in PQShield API
+// Export for use in PQ359 API
 export default AdvancedSecurityScanner;

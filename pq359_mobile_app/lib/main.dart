@@ -52,14 +52,14 @@ void main() async {
   // Run the app
   runApp(
     ProviderScope(
-      child: PQShieldApp(),
+      child: PQ359App(),
     ),
   );
 }
 
 Future<void> _initializeApp() async {
   try {
-    AppLogger.info('Initializing PQShield Mobile App...');
+    AppLogger.info('Initializing PQ359 Mobile App...');
     
     // Set preferred orientations
     await SystemChrome.setPreferredOrientations([
@@ -96,7 +96,7 @@ Future<void> _initializeApp() async {
     await MLService.initialize();
     AppLogger.info('ML models initialized');
     
-    AppLogger.info('PQShield Mobile App initialization completed');
+    AppLogger.info('PQ359 Mobile App initialization completed');
     
   } catch (e, stackTrace) {
     AppLogger.error('App initialization failed', e, stackTrace);

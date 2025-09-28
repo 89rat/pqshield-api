@@ -1,5 +1,5 @@
 /**
- * Security API Endpoints for PQShield API
+ * Security API Endpoints for PQ359 API
  * Real threat detection, vulnerability scanning, and security analysis
  */
 
@@ -29,8 +29,8 @@ import paymentService from '../services/PaymentService.js';
 
 class SecurityAPI {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_BASE_URL || 'https://api.pqshieldapi.com';
-    this.edgeWorkerURL = process.env.REACT_APP_EDGE_WORKER_URL || 'https://pqshield-edge.workers.dev';
+    this.baseURL = process.env.REACT_APP_API_BASE_URL || 'https://api.pq359api.com';
+    this.edgeWorkerURL = process.env.REACT_APP_EDGE_WORKER_URL || 'https://pq359-edge.workers.dev';
     
     // API endpoints
     this.endpoints = {

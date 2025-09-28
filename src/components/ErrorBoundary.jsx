@@ -6,7 +6,7 @@ import performanceMonitor from '../utils/performance-monitor';
  * Enhanced Error Boundary with debugging capabilities
  * 
  * Provides comprehensive error handling, logging, and debugging
- * information for the PQShield API platform.
+ * information for the PQ359 API platform.
  */
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -66,7 +66,7 @@ class ErrorBoundary extends React.Component {
     
     // Store in localStorage for debugging
     try {
-      const existingErrors = JSON.parse(localStorage.getItem('pqshield_errors') || '[]');
+      const existingErrors = JSON.parse(localStorage.getItem('pq359_errors') || '[]');
       existingErrors.push(errorDetails);
       
       // Keep only last 10 errors
@@ -74,7 +74,7 @@ class ErrorBoundary extends React.Component {
         existingErrors.shift();
       }
       
-      localStorage.setItem('pqshield_errors', JSON.stringify(existingErrors));
+      localStorage.setItem('pq359_errors', JSON.stringify(existingErrors));
     } catch (storageError) {
       console.warn('Failed to store error in localStorage:', storageError);
     }
@@ -147,7 +147,7 @@ class ErrorBoundary extends React.Component {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pqshield-error-report-${this.state.errorId}.json`;
+    a.download = `pq359-error-report-${this.state.errorId}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -156,9 +156,9 @@ class ErrorBoundary extends React.Component {
   
   getRelevantLocalStorage = () => {
     const relevantKeys = [
-      'pqshield_errors',
-      'pqshield_settings',
-      'pqshield_user_preferences',
+      'pq359_errors',
+      'pq359_settings',
+      'pq359_user_preferences',
     ];
     
     const data = {};
@@ -188,7 +188,7 @@ class ErrorBoundary extends React.Component {
                 <div>
                   <h1 className="text-2xl font-bold">Something went wrong</h1>
                   <p className="text-red-100">
-                    PQShield encountered an unexpected error
+                    PQ359 encountered an unexpected error
                   </p>
                 </div>
               </div>
@@ -343,14 +343,14 @@ export const useErrorReporting = () => {
         manual: true,
       };
       
-      const existingErrors = JSON.parse(localStorage.getItem('pqshield_errors') || '[]');
+      const existingErrors = JSON.parse(localStorage.getItem('pq359_errors') || '[]');
       existingErrors.push(errorDetails);
       
       if (existingErrors.length > 10) {
         existingErrors.shift();
       }
       
-      localStorage.setItem('pqshield_errors', JSON.stringify(existingErrors));
+      localStorage.setItem('pq359_errors', JSON.stringify(existingErrors));
     } catch (storageError) {
       console.warn('Failed to store manual error:', storageError);
     }

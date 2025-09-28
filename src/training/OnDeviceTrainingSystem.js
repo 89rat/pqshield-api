@@ -1,5 +1,5 @@
 /**
- * On-Device Training System for PQShield Virtual Sentinel Engine
+ * On-Device Training System for PQ359 Virtual Sentinel Engine
  * 
  * Implements privacy-preserving, resource-aware training that runs entirely
  * on the user's device without sending data to external servers.

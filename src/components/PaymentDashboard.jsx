@@ -1,5 +1,5 @@
 /**
- * Payment Dashboard Component for PQShield API
+ * Payment Dashboard Component for PQ359 API
  * Subscription management, billing, and payment processing
  */
 
@@ -103,7 +103,7 @@ const PaymentDashboard = () => {
         <div className="dashboard-header">
           <div className="header-content">
             <h1>Billing & Subscription</h1>
-            <p>Manage your PQShield API subscription and billing</p>
+            <p>Manage your PQ359 API subscription and billing</p>
           </div>
           
           <div className="current-plan-badge">

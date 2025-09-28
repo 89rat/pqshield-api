@@ -1,5 +1,5 @@
 /**
- * Enhanced Payment Service for PQShield API
+ * Enhanced Payment Service for PQ359 API
  * Real Stripe integration with advanced fraud detection and security
  */
 

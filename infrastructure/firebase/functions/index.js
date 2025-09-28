@@ -1,5 +1,5 @@
 /**
- * Firebase Cloud Functions for PQShield API
+ * Firebase Cloud Functions for PQ359 API
  * Real-time backend processing for security scanning and threat detection
  */
 

@@ -1,5 +1,5 @@
 /**
- * Enhanced PQShield API - Cloudflare Worker
+ * Enhanced PQ359 API - Cloudflare Worker
  * Real-time edge computing for neural network threat detection
  * Quantum-resistant security scanning at the edge
  */

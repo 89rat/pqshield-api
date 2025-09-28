@@ -11,8 +11,8 @@ import 'features/splash/presentation/screens/splash_screen.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 
-class PQShieldApp extends ConsumerWidget {
-  const PQShieldApp({Key? key}) : super(key: key);
+class PQ359App extends ConsumerWidget {
+  const PQ359App({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +20,7 @@ class PQShieldApp extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
     
     return MaterialApp(
-      title: 'PQShield - Quantum Security',
+      title: 'PQ359 - Quantum Security',
       debugShowCheckedModeBanner: false,
       
       // Theme Configuration

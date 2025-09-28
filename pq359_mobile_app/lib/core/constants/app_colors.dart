@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// PQShield App Color Palette
+/// PQ359 App Color Palette
 /// Quantum-inspired colors with security themes
 class AppColors {
   // Primary Colors - Quantum Blue Spectrum

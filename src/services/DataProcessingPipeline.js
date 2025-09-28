@@ -1,5 +1,5 @@
 /**
- * Real-time Data Processing Pipeline for PQShield API
+ * Real-time Data Processing Pipeline for PQ359 API
  * Live threat analysis, neural network processing, and quantum assessment
  */
 

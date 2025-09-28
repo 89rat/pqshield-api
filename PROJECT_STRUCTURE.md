@@ -1,9 +1,9 @@
-# PQShield API - Professional Project Structure
+# PQ359 API - Professional Project Structure
 
 ## 📁 Repository Organization
 
 ```
-pqshield-api/
+pq359-api/
 ├── 📁 src/                          # Source Code
 │   ├── 📁 components/               # React Components
 │   ├── 📁 services/                 # Business Logic Services
@@ -152,8 +152,8 @@ pqshield-api/
 ### Quick Start
 ```bash
 # Clone repository
-git clone https://github.com/89rat/pqshield-api.git
-cd pqshield-api
+git clone https://github.com/89rat/pq359-api.git
+cd pq359-api
 
 # Install dependencies
 pnpm install
@@ -216,4 +216,4 @@ pnpm deploy
 
 ---
 
-**The PQShield API represents the future of quantum-resistant security with viral growth mechanics and production-ready implementation for immediate global deployment.**
+**The PQ359 API represents the future of quantum-resistant security with viral growth mechanics and production-ready implementation for immediate global deployment.**

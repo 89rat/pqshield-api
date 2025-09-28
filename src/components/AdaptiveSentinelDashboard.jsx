@@ -307,7 +307,7 @@ const TeenDashboard = ({ metrics, threats, config, activeTab, setActiveTab }) =>
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">PQShield</h1>
+                <h1 className="text-2xl font-bold text-gray-800">PQ359</h1>
                 <p className="text-sm text-gray-600">Your Privacy Guardian</p>
               </div>
             </div>
@@ -533,7 +533,7 @@ const AdultDashboard = ({ metrics, threats, config, activeTab, setActiveTab }) =
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">PQShield Enterprise</h1>
+                <h1 className="text-2xl font-bold text-gray-900">PQ359 Enterprise</h1>
                 <p className="text-sm text-gray-600">Quantum-Resistant Security Platform</p>
               </div>
             </div>

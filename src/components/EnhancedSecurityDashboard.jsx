@@ -1,5 +1,5 @@
 /**
- * Enhanced Security Dashboard for PQShield API
+ * Enhanced Security Dashboard for PQ359 API
  * Real-time vulnerability scanning with neural network analysis
  */
 
@@ -386,7 +386,7 @@ const EnhancedSecurityDashboard = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <Shield className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">PQShield Security Scanner</h1>
+              <h1 className="text-2xl font-bold text-gray-900">PQ359 Security Scanner</h1>
             </div>
             
             <div className="flex items-center space-x-4">

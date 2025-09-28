@@ -1,9 +1,9 @@
 {
-  "name": "pqshield-api-enhanced",
+  "name": "pq359-api-enhanced",
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "PQShield API - Real-world vulnerability detection with neural networks and quantum-resistant security",
+  "description": "PQ359 API - Real-world vulnerability detection with neural networks and quantum-resistant security",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
@@ -13,7 +13,7 @@
     "test:ui": "vitest --ui",
     "deploy": "npm run build && wrangler pages deploy dist",
     "deploy:workers": "wrangler deploy infrastructure/cloudflare/workers/snn-ann-edge-api.ts",
-    "deploy:d1": "wrangler d1 execute pqshield-db --file=infrastructure/cloudflare/d1/schema.sql",
+    "deploy:d1": "wrangler d1 execute pq359-db --file=infrastructure/cloudflare/d1/schema.sql",
     "security:scan": "node src/security/cli-scanner.js",
     "neural:train": "node src/neural/train-models.js"
   },
@@ -89,14 +89,14 @@
     "threat-detection",
     "post-quantum-cryptography"
   ],
-  "author": "PQShield Team",
+  "author": "PQ359 Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pqshield/pqshield-api"
+    "url": "https://github.com/89rat/pq359-api"
   },
   "bugs": {
-    "url": "https://github.com/pqshield/pqshield-api/issues"
+    "url": "https://github.com/89rat/pq359-api/issues"
   },
-  "homepage": "https://pqshieldapi.com"
+  "homepage": "https://pq359api.com"
 }

@@ -25,7 +25,7 @@
 - **Plasticity Mechanisms**: Enables continuous learning and adaptation to new threats
 - **Edge Computing Compatibility**: Suitable for deployment at network edge for ultra-low latency
 
-### Application to PQShield API
+### Application to PQ359 API
 - Implement spike encoding for network packet data
 - Use STDP for adaptive threat pattern learning
 - Deploy at Cloudflare edge for sub-millisecond response times

@@ -1,6 +1,6 @@
 {
-  "name": "pqshield-api-functions",
-  "description": "Firebase Cloud Functions for PQShield API - Real-time security scanning backend",
+  "name": "pq359-api-functions",
+  "description": "Firebase Cloud Functions for PQ359 API - Real-time security scanning backend",
   "version": "1.0.0",
   "main": "index.js",
   "engines": {
@@ -201,12 +201,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pqshield/pqshield-api"
+    "url": "https://github.com/pq359/pq359-api"
   },
   "bugs": {
-    "url": "https://github.com/pqshield/pqshield-api/issues"
+    "url": "https://github.com/pq359/pq359-api/issues"
   },
-  "homepage": "https://pqshieldapi.com",
+  "homepage": "https://pq359api.com",
   "keywords": [
     "firebase",
     "cloud-functions",
@@ -219,16 +219,16 @@
     "cybersecurity",
     "post-quantum-cryptography"
   ],
-  "author": "PQShield Team",
+  "author": "PQ359 Team",
   "contributors": [
     {
-      "name": "PQShield Security Team",
-      "email": "security@pqshield.com"
+      "name": "PQ359 Security Team",
+      "email": "security@pq359.com"
     }
   ],
   "funding": {
     "type": "individual",
-    "url": "https://github.com/sponsors/pqshield"
+    "url": "https://github.com/sponsors/pq359"
   },
   "config": {
     "commitizen": {

@@ -1,5 +1,5 @@
 /**
- * WebSocket Server for PQShield API
+ * WebSocket Server for PQ359 API
  * Real-time threat monitoring and live data processing
  */
 
@@ -19,7 +19,7 @@ const admin = require('firebase-admin');
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID || 'pqshield-api'
+    projectId: process.env.FIREBASE_PROJECT_ID || 'pq359-api'
   });
 }
 
@@ -68,7 +68,7 @@ class WebSocketServer extends EventEmitter {
     // Security middleware
     this.app.use(helmet());
     this.app.use(cors({
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'https://pqshieldapi.com'],
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'https://pq359api.com'],
       credentials: true
     }));
 
@@ -659,7 +659,7 @@ class WebSocketServer extends EventEmitter {
 
   start() {
     this.server.listen(this.port, () => {
-      console.log(`PQShield WebSocket Server running on port ${this.port}`);
+      console.log(`PQ359 WebSocket Server running on port ${this.port}`);
       console.log(`WebSocket endpoint: ws://localhost:${this.port}/ws`);
       console.log(`Health check: http://localhost:${this.port}/health`);
     });

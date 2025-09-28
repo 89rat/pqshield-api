@@ -1,12 +1,12 @@
-# 🛡️ PQShield API - Quantum-Resistant Security Platform
+# 🛡️ PQ359 API - Quantum-Resistant Security Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/89rat/pqshield-api/actions)
-[![Security Rating](https://img.shields.io/badge/Security-A+-brightgreen.svg)](https://github.com/89rat/pqshield-api/security)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/89rat/pqshield-api/releases)
-[![Neural Networks](https://img.shields.io/badge/Neural%20Networks-SNN%2FANN-purple)](https://github.com/89rat/pqshield-api)
-[![Quantum Resistant](https://img.shields.io/badge/Quantum-Resistant-gold)](https://github.com/89rat/pqshield-api)
-[![Viral Growth](https://img.shields.io/badge/K--Factor-%3E1.2-red)](https://github.com/89rat/pqshield-api)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen.svg)](https://github.com/89rat/pq359-api/actions)
+[![Security Rating](https://img.shields.io/badge/Security-A+-brightgreen.svg)](https://github.com/89rat/pq359-api/security)
+[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/89rat/pq359-api/releases)
+[![Neural Networks](https://img.shields.io/badge/Neural%20Networks-SNN%2FANN-purple)](https://github.com/89rat/pq359-api)
+[![Quantum Resistant](https://img.shields.io/badge/Quantum-Resistant-gold)](https://github.com/89rat/pq359-api)
+[![Viral Growth](https://img.shields.io/badge/K--Factor-%3E1.2-red)](https://github.com/89rat/pq359-api)
 
 > **The world's first viral gamified quantum-resistant security platform powered by real SNN/ANN neural networks with age-adaptive privacy protection and engineered for k>1 viral growth.**
 
@@ -78,8 +78,8 @@ Cloudflare Wrangler CLI
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/89rat/pqshield-api.git
-cd pqshield-api
+git clone https://github.com/89rat/pq359-api.git
+cd pq359-api
 
 # Install dependencies
 pnpm install
@@ -256,7 +256,7 @@ pnpm test:viral             # Viral mechanics validation
 
 ## 🤝 Contributing
 
-We welcome contributions to the PQShield API! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions to the PQ359 API! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ### Development Process
 1. **Fork the repository** and create a feature branch
@@ -302,12 +302,12 @@ We welcome contributions to the PQShield API! Please see our [Contributing Guide
 
 ## 💬 Community & Support
 
-- **GitHub Discussions**: [Community Q&A and feature requests](https://github.com/89rat/pqshield-api/discussions)
-- **Discord Server**: [Real-time community chat and support](https://discord.gg/pqshield)
-- **Documentation**: [Comprehensive guides and tutorials](https://docs.pqshield.com)
-- **Blog**: [Latest updates and technical insights](https://blog.pqshield.com)
-- **Twitter**: [@PQShieldAPI](https://twitter.com/PQShieldAPI)
-- **Email**: support@pqshield.com
+- **GitHub Discussions**: [Community Q&A and feature requests](https://github.com/89rat/pq359-api/discussions)
+- **Discord Server**: [Real-time community chat and support](https://discord.gg/pq359)
+- **Documentation**: [Comprehensive guides and tutorials](https://docs.pq359.com)
+- **Blog**: [Latest updates and technical insights](https://blog.pq359.com)
+- **Twitter**: [@PQ359API](https://twitter.com/PQ359API)
+- **Email**: support@pq359.com
 
 ## 📄 License
 
@@ -337,12 +337,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **🛡️ Protecting the quantum future with viral gamified security 🎮**
 
-[**🌟 Star this repository**](https://github.com/89rat/pqshield-api) • [**🐛 Report issues**](https://github.com/89rat/pqshield-api/issues) • [**💡 Request features**](https://github.com/89rat/pqshield-api/discussions) • [**🚀 Deploy now**](https://pqshield.com)
+[**🌟 Star this repository**](https://github.com/89rat/pq359-api) • [**🐛 Report issues**](https://github.com/89rat/pq359-api/issues) • [**💡 Request features**](https://github.com/89rat/pq359-api/discussions) • [**🚀 Deploy now**](https://pq359.com)
 
 **Made with ❤️ for a secure, gamified, and viral quantum-resistant future**
 
-[![Deploy to Cloudflare](https://img.shields.io/badge/Deploy%20to-Cloudflare-orange)](https://deploy.workers.cloudflare.com/?url=https://github.com/89rat/pqshield-api)
-[![Deploy to Vercel](https://img.shields.io/badge/Deploy%20to-Vercel-black)](https://vercel.com/new/clone?repository-url=https://github.com/89rat/pqshield-api)
-[![Deploy to Netlify](https://img.shields.io/badge/Deploy%20to-Netlify-blue)](https://app.netlify.com/start/deploy?repository=https://github.com/89rat/pqshield-api)
+[![Deploy to Cloudflare](https://img.shields.io/badge/Deploy%20to-Cloudflare-orange)](https://deploy.workers.cloudflare.com/?url=https://github.com/89rat/pq359-api)
+[![Deploy to Vercel](https://img.shields.io/badge/Deploy%20to-Vercel-black)](https://vercel.com/new/clone?repository-url=https://github.com/89rat/pq359-api)
+[![Deploy to Netlify](https://img.shields.io/badge/Deploy%20to-Netlify-blue)](https://app.netlify.com/start/deploy?repository=https://github.com/89rat/pq359-api)
 
 </div>

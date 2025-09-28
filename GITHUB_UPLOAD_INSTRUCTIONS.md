@@ -1,8 +1,8 @@
-# PQShield API Repository Setup Complete
+# PQ359 API Repository Setup Complete
 
 ## Repository Status: Ready for GitHub Upload
 
-The complete PQShield API codebase has been prepared and committed to git with:
+The complete PQ359 API codebase has been prepared and committed to git with:
 
 ### ✅ Complete Implementation
 - Real SNN/ANN neural networks with hardened security
@@ -26,7 +26,7 @@ To upload this repository to GitHub:
 
 1. Create a new repository on GitHub.com
 2. Add the remote origin:
-   `git remote add origin https://github.com/username/pqshield-api.git`
+   `git remote add origin https://github.com/username/pq359-api.git`
 3. Push to GitHub:
    `git push -u origin branch-3`
 

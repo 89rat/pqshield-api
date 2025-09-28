@@ -1,5 +1,5 @@
-name: pqshield_mobile_app
-description: "PQShield - Quantum-Resistant Security Platform for Mobile"
+name: pq359_mobile_app
+description: "PQ359 - Quantum-Resistant Security Platform for Mobile"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -91,25 +91,25 @@ flutter:
     - assets/icons/
 
   fonts:
-    - family: PQShield
+    - family: PQ359
       fonts:
-        - asset: assets/fonts/PQShield-Regular.ttf
-        - asset: assets/fonts/PQShield-Bold.ttf
+        - asset: assets/fonts/PQ359-Regular.ttf
+        - asset: assets/fonts/PQ359-Bold.ttf
           weight: 700
-        - asset: assets/fonts/PQShield-Light.ttf
+        - asset: assets/fonts/PQ359-Light.ttf
           weight: 300
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icons/pqshield_icon.png"
+  image_path: "assets/icons/pq359_icon.png"
   min_sdk_android: 21
   web:
     generate: true
-    image_path: "assets/icons/pqshield_icon.png"
+    image_path: "assets/icons/pq359_icon.png"
     background_color: "#0D47A1"
     theme_color: "#0D47A1"
   windows:
     generate: true
-    image_path: "assets/icons/pqshield_icon.png"
+    image_path: "assets/icons/pq359_icon.png"
     icon_size: 48

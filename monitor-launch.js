@@ -13,7 +13,7 @@ Hour 12: 2,000 signups, trending on Product Hunt
 Hour 24: 10,000 signups, #1 on Product Hunt
 
 📈 CURRENT STATUS:
-- Platform: https://pqshieldapi.com
+- Platform: https://pq359api.com
 - Status: ${await this.checkStatus()}
 - Features: Quantum-resistant protection LIVE
 - Performance: 0.3ms SNN detection, 94.2% ANN accuracy
@@ -33,7 +33,7 @@ Hour 24: 10,000 signups, #1 on Product Hunt
 
   async checkStatus() {
     try {
-      const response = await fetch('https://pqshieldapi.com');
+      const response = await fetch('https://pq359api.com');
       return response.ok ? '🟢 LIVE' : '🔴 DOWN';
     } catch {
       return '🟡 CHECKING...';

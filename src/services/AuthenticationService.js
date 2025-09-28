@@ -1,5 +1,5 @@
 /**
- * Authentication Service for PQShield API
+ * Authentication Service for PQ359 API
  * Comprehensive user authentication and account management system
  */
 
@@ -810,7 +810,7 @@ class AuthenticationService {
       userAgent: navigator.userAgent
     };
     
-    localStorage.setItem('pqshield_session', JSON.stringify(sessionData));
+    localStorage.setItem('pq359_session', JSON.stringify(sessionData));
   }
 
   generateSessionId() {
@@ -845,8 +845,8 @@ class AuthenticationService {
   }
 
   clearSession() {
-    localStorage.removeItem('pqshield_session');
-    localStorage.removeItem('pqshield_auth_token');
+    localStorage.removeItem('pq359_session');
+    localStorage.removeItem('pq359_auth_token');
   }
 
   async trackAuthEvent(event, data) {

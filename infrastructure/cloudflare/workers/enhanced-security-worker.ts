@@ -1,5 +1,5 @@
 /**
- * Enhanced Cloudflare Worker for PQShield API
+ * Enhanced Cloudflare Worker for PQ359 API
  * Edge-based security processing with real neural network inference
  */
 
@@ -56,7 +56,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Middleware
 app.use('*', cors({
-  origin: ['https://pqshieldapi.com', 'https://www.pqshieldapi.com', 'http://localhost:3000'],
+  origin: ['https://pq359api.com', 'https://www.pq359api.com', 'http://localhost:3000'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));

@@ -2,7 +2,7 @@
  * Performance Monitoring and Debugging Utility
  * 
  * Provides comprehensive performance tracking, memory monitoring,
- * and debugging capabilities for the PQShield API platform.
+ * and debugging capabilities for the PQ359 API platform.
  */
 
 class PerformanceMonitor {
