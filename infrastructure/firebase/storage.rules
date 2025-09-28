@@ -1,0 +1,166 @@
+// PQ359 Firebase Storage Security Rules
+// Version: 1.0.0
+// Last Updated: 2024-09-28
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidFileSize(maxSizeInMB) {
+      return request.resource.size < maxSizeInMB * 1024 * 1024;
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocumentType() {
+      return request.resource.contentType in [
+        'application/pdf',
+        'text/plain',
+        'application/json'
+      ];
+    }
+    
+    function hasValidMetadata() {
+      return request.resource.metadata != null &&
+             request.resource.metadata.uploadedBy == request.auth.uid;
+    }
+    
+    // User profile images
+    match /users/{userId}/profile/{imageId} {
+      allow read: if true; // Public read for profile images
+      allow write: if isAuthenticated() && 
+                      isOwner(userId) && 
+                      isValidImageType() && 
+                      isValidFileSize(5) && // 5MB limit
+                      hasValidMetadata();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // User private documents and reports
+    match /users/{userId}/documents/{documentId} {
+      allow read, write, delete: if isAuthenticated() && 
+                                    isOwner(userId) && 
+                                    isValidDocumentType() && 
+                                    isValidFileSize(10); // 10MB limit
+    }
+    
+    // Security scan reports
+    match /users/{userId}/reports/{reportId} {
+      allow read, write: if isAuthenticated() && 
+                           isOwner(userId) && 
+                           isValidDocumentType() && 
+                           isValidFileSize(50); // 50MB limit for reports
+      allow delete: if false; // Reports cannot be deleted for audit purposes
+    }
+    
+    // Neural network models (admin only)
+    match /models/{modelType}/{modelId} {
+      allow read: if isAuthenticated(); // All authenticated users can read models
+      allow write, delete: if isAuthenticated() && 
+                             request.auth.token.admin == true; // Admin only
+    }
+    
+    // Achievement badges and gamification assets
+    match /achievements/{achievementId} {
+      allow read: if true; // Public read for achievement images
+      allow write, delete: if isAuthenticated() && 
+                             request.auth.token.admin == true; // Admin only
+    }
+    
+    // Team logos and assets
+    match /teams/{teamId}/assets/{assetId} {
+      allow read: if true; // Public read for team assets
+      allow write: if isAuthenticated() && 
+                      isValidImageType() && 
+                      isValidFileSize(2) && // 2MB limit for team assets
+                      (isOwner(resource.metadata.teamLeader) || 
+                       request.auth.token.admin == true);
+      allow delete: if isAuthenticated() && 
+                       (isOwner(resource.metadata.teamLeader) || 
+                        request.auth.token.admin == true);
+    }
+    
+    // Shared threat intelligence data
+    match /threat-intelligence/{dataType}/{fileId} {
+      allow read: if isAuthenticated(); // All authenticated users can read
+      allow write: if isAuthenticated() && 
+                      request.auth.token.premium == true && // Premium users only
+                      isValidDocumentType() && 
+                      isValidFileSize(100); // 100MB limit
+      allow delete: if isAuthenticated() && 
+                       request.auth.token.admin == true; // Admin only
+    }
+    
+    // Age-adaptive content (child-safe assets)
+    match /age-adaptive/{ageGroup}/{contentId} {
+      allow read: if isAuthenticated() && 
+                     (request.auth.token.ageGroup == ageGroup || 
+                      request.auth.token.parentalControl == true ||
+                      request.auth.token.admin == true);
+      allow write, delete: if isAuthenticated() && 
+                             request.auth.token.admin == true; // Admin only
+    }
+    
+    // Backup and export data
+    match /backups/{userId}/{backupId} {
+      allow read, write: if isAuthenticated() && 
+                           isOwner(userId) && 
+                           isValidDocumentType() && 
+                           isValidFileSize(500); // 500MB limit for backups
+      allow delete: if isAuthenticated() && 
+                       isOwner(userId);
+    }
+    
+    // Temporary uploads (auto-deleted after 24 hours)
+    match /temp/{userId}/{tempId} {
+      allow read, write: if isAuthenticated() && 
+                           isOwner(userId) && 
+                           isValidFileSize(20) && // 20MB limit for temp files
+                           request.time < resource.timeCreated + duration.value(1, 'd');
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Public assets (logos, marketing materials)
+    match /public/{assetType}/{assetId} {
+      allow read: if true; // Public read access
+      allow write, delete: if isAuthenticated() && 
+                             request.auth.token.admin == true; // Admin only
+    }
+    
+    // Analytics and metrics data
+    match /analytics/{userId}/{metricId} {
+      allow read, write: if isAuthenticated() && 
+                           isOwner(userId) && 
+                           isValidDocumentType() && 
+                           isValidFileSize(10); // 10MB limit
+      allow delete: if false; // Analytics data cannot be deleted
+    }
+    
+    // Compliance and audit logs
+    match /compliance/{logType}/{logId} {
+      allow read: if isAuthenticated() && 
+                     (request.auth.token.compliance == true || 
+                      request.auth.token.admin == true);
+      allow write: if isAuthenticated() && 
+                      request.auth.token.admin == true; // Admin only
+      allow delete: if false; // Compliance logs cannot be deleted
+    }
+    
+    // Default deny rule for any unmatched paths
+    match /{allPaths=**} {
+      allow read, write, delete: if false;
+    }
+  }
+}

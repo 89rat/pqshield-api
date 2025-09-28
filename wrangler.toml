@@ -1,0 +1,153 @@
+# PQ359 Production Cloudflare Worker Configuration
+name = "pq359-api-production"
+main = "infrastructure/cloudflare/workers/enhanced-security-worker.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Production resource limits
+[limits]
+cpu_ms = 50          # 50ms CPU limit per request
+memory_mb = 256      # 256MB memory limit
+
+# Production environment variables
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+NEURAL_MODEL_SIZE = "4096"
+CACHE_TTL_SECONDS = "3600"
+COMPRESSION_LEVEL = "6"
+BATCH_SIZE = "32"
+MAX_CACHE_ENTRIES = "10000"
+PERFORMANCE_TARGET_MS = "50"
+MEMORY_LIMIT_MB = "128"
+API_VERSION = "v1.0.0"
+ENABLE_ANALYTICS = "true"
+ENABLE_SECURITY_HEADERS = "true"
+
+# Production environment
+[env.production]
+name = "pq359-api-prod"
+route = "api.pq359.com/*"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "warn"
+METRICS_ENABLED = "true"
+CACHE_ENABLED = "true"
+COMPRESSION_ENABLED = "true"
+SECURITY_ENHANCED = "true"
+
+# Development environment
+[env.development]
+name = "pq359-api-dev"
+route = "dev-api.pq359.com/*"
+
+[env.development.vars]
+ENVIRONMENT = "development"
+LOG_LEVEL = "debug"
+METRICS_ENABLED = "true"
+CACHE_ENABLED = "false"
+COMPRESSION_ENABLED = "false"
+
+# KV namespace for edge caching
+[[kv_namespaces]]
+binding = "PQ359_CACHE"
+preview_id = "pq359_cache_preview"
+id = "pq359_cache_production"
+
+# R2 bucket for model and asset storage
+[[r2_buckets]]
+binding = "PQ359_STORAGE"
+bucket_name = "pq359-production-storage"
+preview_bucket_name = "pq359-dev-storage"
+
+# D1 database for edge data
+[[d1_databases]]
+binding = "PQ359_DB"
+database_name = "pq359-production"
+database_id = "pq359-prod-db-id"
+
+# Durable Objects for real-time features
+[[durable_objects.bindings]]
+name = "NEURAL_PROCESSOR"
+class_name = "NeuralProcessor"
+script_name = "pq359-neural-processor"
+
+[[durable_objects.bindings]]
+name = "SECURITY_MONITOR"
+class_name = "SecurityMonitor"
+script_name = "pq359-security-monitor"
+
+# Analytics for monitoring
+[analytics_engine_datasets]
+[[analytics_engine_datasets]]
+binding = "PQ359_ANALYTICS"
+dataset = "pq359_production_metrics"
+
+# Build configuration
+[build]
+command = "npm run build"
+cwd = "."
+watch_dir = ["src", "infrastructure"]
+
+# Production routes
+[[routes]]
+pattern = "api.pq359.com/neural/*"
+zone_name = "pq359.com"
+custom_domain = true
+
+[[routes]]
+pattern = "api.pq359.com/security/*"
+zone_name = "pq359.com"
+custom_domain = true
+
+[[routes]]
+pattern = "api.pq359.com/auth/*"
+zone_name = "pq359.com"
+custom_domain = true
+
+[[routes]]
+pattern = "api.pq359.com/health"
+zone_name = "pq359.com"
+custom_domain = true
+
+# Scheduled tasks for maintenance
+[[triggers.crons]]
+cron = "0 */4 * * *"              # Every 4 hours
+handler = "scheduledHandler"
+
+[[triggers.crons]]
+cron = "0 0 * * *"                # Daily at midnight
+handler = "dailyMaintenanceHandler"
+
+# Security configuration
+[security]
+csp = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.pq359.com wss://ws.pq359.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com"
+hsts = "max-age=31536000; includeSubDomains; preload"
+referrer_policy = "strict-origin-when-cross-origin"
+
+# Performance monitoring
+[monitoring]
+metrics_enabled = true
+tracing_enabled = true
+logging_level = "info"
+error_tracking = true
+
+# Regional deployment for global performance
+[regions]
+primary = "auto"
+fallback = ["us-east-1", "eu-west-1", "ap-southeast-1", "ap-northeast-1"]
+
+# Traffic routing
+[traffic]
+routing_strategy = "performance_optimized"
+load_balancing = "round_robin"
+failover = "automatic"
+health_check_path = "/health"
+
+# Backup and disaster recovery
+[backup]
+strategy = "multi_region_replication"
+frequency = "hourly"
+retention_days = 30
+encryption = true

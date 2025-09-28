@@ -1,0 +1,308 @@
+{
+  "conditions": [
+    {
+      "name": "premium_users",
+      "expression": "user.subscription_tier in ['premium', 'enterprise']"
+    },
+    {
+      "name": "beta_testers",
+      "expression": "user.beta_tester == true"
+    },
+    {
+      "name": "child_users",
+      "expression": "user.age_group == 'child'"
+    },
+    {
+      "name": "teen_users",
+      "expression": "user.age_group == 'teen'"
+    },
+    {
+      "name": "adult_users",
+      "expression": "user.age_group == 'adult'"
+    },
+    {
+      "name": "mobile_users",
+      "expression": "device.platform == 'mobile'"
+    },
+    {
+      "name": "web_users",
+      "expression": "device.platform == 'web'"
+    }
+  ],
+  "parameters": {
+    "neural_model_version": {
+      "defaultValue": {
+        "value": "1.0.0"
+      },
+      "conditionalValues": {
+        "beta_testers": {
+          "value": "1.1.0-beta"
+        },
+        "premium_users": {
+          "value": "1.0.1-premium"
+        }
+      },
+      "description": "Version of the neural network model to use"
+    },
+    "max_scan_frequency": {
+      "defaultValue": {
+        "value": "5"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "50"
+        }
+      },
+      "description": "Maximum number of scans per hour"
+    },
+    "enable_gamification": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "conditionalValues": {
+        "child_users": {
+          "value": "true"
+        },
+        "teen_users": {
+          "value": "true"
+        },
+        "adult_users": {
+          "value": "true"
+        }
+      },
+      "description": "Enable gamification features"
+    },
+    "viral_k_factor_target": {
+      "defaultValue": {
+        "value": "1.2"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "1.5"
+        }
+      },
+      "description": "Target viral coefficient for growth"
+    },
+    "age_adaptive_privacy_level": {
+      "defaultValue": {
+        "value": "medium"
+      },
+      "conditionalValues": {
+        "child_users": {
+          "value": "maximum"
+        },
+        "teen_users": {
+          "value": "high"
+        },
+        "adult_users": {
+          "value": "medium"
+        }
+      },
+      "description": "Privacy protection level based on age"
+    },
+    "quantum_resistance_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Enable quantum-resistant cryptography"
+    },
+    "snn_inference_timeout": {
+      "defaultValue": {
+        "value": "5000"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "10000"
+        },
+        "mobile_users": {
+          "value": "3000"
+        }
+      },
+      "description": "SNN inference timeout in milliseconds"
+    },
+    "ann_batch_size": {
+      "defaultValue": {
+        "value": "32"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "64"
+        },
+        "mobile_users": {
+          "value": "16"
+        }
+      },
+      "description": "ANN batch size for processing"
+    },
+    "threat_intelligence_sources": {
+      "defaultValue": {
+        "value": "[\"virustotal\", \"abuseipdb\"]"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "[\"virustotal\", \"abuseipdb\", \"shodan\", \"haveibeenpwned\"]"
+        }
+      },
+      "description": "Available threat intelligence sources"
+    },
+    "social_sharing_platforms": {
+      "defaultValue": {
+        "value": "[\"twitter\", \"facebook\"]"
+      },
+      "conditionalValues": {
+        "teen_users": {
+          "value": "[\"twitter\", \"instagram\", \"tiktok\", \"discord\"]"
+        },
+        "adult_users": {
+          "value": "[\"twitter\", \"facebook\", \"linkedin\"]"
+        }
+      },
+      "description": "Available social sharing platforms"
+    },
+    "achievement_multiplier": {
+      "defaultValue": {
+        "value": "1.0"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "2.0"
+        },
+        "beta_testers": {
+          "value": "1.5"
+        }
+      },
+      "description": "Achievement point multiplier"
+    },
+    "team_size_limit": {
+      "defaultValue": {
+        "value": "10"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "50"
+        }
+      },
+      "description": "Maximum team size"
+    },
+    "referral_bonus_amount": {
+      "defaultValue": {
+        "value": "100"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "200"
+        }
+      },
+      "description": "Referral bonus points"
+    },
+    "enable_advanced_analytics": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "true"
+        }
+      },
+      "description": "Enable advanced analytics features"
+    },
+    "cache_ttl_seconds": {
+      "defaultValue": {
+        "value": "3600"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "1800"
+        }
+      },
+      "description": "Cache time-to-live in seconds"
+    },
+    "enable_offline_mode": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "conditionalValues": {
+        "mobile_users": {
+          "value": "true"
+        },
+        "web_users": {
+          "value": "false"
+        }
+      },
+      "description": "Enable offline functionality"
+    },
+    "notification_frequency": {
+      "defaultValue": {
+        "value": "daily"
+      },
+      "conditionalValues": {
+        "child_users": {
+          "value": "weekly"
+        },
+        "premium_users": {
+          "value": "real_time"
+        }
+      },
+      "description": "Notification frequency setting"
+    },
+    "data_retention_days": {
+      "defaultValue": {
+        "value": "365"
+      },
+      "conditionalValues": {
+        "child_users": {
+          "value": "90"
+        },
+        "premium_users": {
+          "value": "1095"
+        }
+      },
+      "description": "Data retention period in days"
+    },
+    "enable_experimental_features": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "conditionalValues": {
+        "beta_testers": {
+          "value": "true"
+        }
+      },
+      "description": "Enable experimental features"
+    },
+    "api_rate_limit": {
+      "defaultValue": {
+        "value": "100"
+      },
+      "conditionalValues": {
+        "premium_users": {
+          "value": "1000"
+        }
+      },
+      "description": "API requests per hour limit"
+    },
+    "enable_parental_controls": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "conditionalValues": {
+        "child_users": {
+          "value": "true"
+        },
+        "teen_users": {
+          "value": "true"
+        }
+      },
+      "description": "Enable parental control features"
+    }
+  },
+  "version": {
+    "versionNumber": "1",
+    "updateTime": "2024-09-28T00:00:00Z",
+    "updateUser": {
+      "email": "admin@pq359.com"
+    },
+    "updateOrigin": "ADMIN_SDK_NODE",
+    "updateType": "INCREMENTAL_UPDATE"
+  }
+}
