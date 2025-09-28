@@ -1,0 +1,5 @@
+# Execute this command to deploy:
+npx wrangler pages deploy dist \
+  --project-name=pqshield-api \
+  --branch=main \
+  --commit-message="Launch PQShield API - Quantum-Resistant Protection"

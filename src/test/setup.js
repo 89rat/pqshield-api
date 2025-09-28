@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import { vi, afterEach } from 'vitest'
+import { cleanup } from '@testing-library/react'
+
+// Cleanup after each test case
+afterEach(() => {
+  cleanup();
+});
 
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
@@ -55,6 +61,79 @@ global.console = {
   warn: vi.fn(),
   error: vi.fn(),
 }
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: 'div',
+    span: 'span',
+    button: 'button',
+    h1: 'h1',
+    h2: 'h2',
+    h3: 'h3',
+    p: 'p',
+    section: 'section',
+    article: 'article',
+  },
+  AnimatePresence: ({ children }) => children,
+  useAnimation: () => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    set: vi.fn(),
+  }),
+  useMotionValue: () => ({
+    get: vi.fn(),
+    set: vi.fn(),
+  }),
+  useTransform: () => vi.fn(),
+  useSpring: () => vi.fn(),
+}))
+
+// Mock Recharts
+vi.mock('recharts', () => ({
+  LineChart: 'div',
+  Line: 'div',
+  XAxis: 'div',
+  YAxis: 'div',
+  CartesianGrid: 'div',
+  Tooltip: 'div',
+  Legend: 'div',
+  ResponsiveContainer: ({ children }) => children,
+  BarChart: 'div',
+  Bar: 'div',
+  PieChart: 'div',
+  Pie: 'div',
+  Cell: 'div',
+}))
+
+// Mock Lucide React icons
+vi.mock('lucide-react', () => {
+  const MockIcon = () => 'svg'
+  return new Proxy({}, {
+    get: () => MockIcon,
+  })
+})
+
+// Mock TensorFlow.js
+vi.mock('@tensorflow/tfjs', () => ({
+  tensor: vi.fn(),
+  sequential: vi.fn(),
+  layers: {
+    dense: vi.fn(),
+    dropout: vi.fn(),
+  },
+  train: {
+    adam: vi.fn(),
+  },
+  losses: {
+    meanSquaredError: vi.fn(),
+  },
+  metrics: {
+    accuracy: vi.fn(),
+  },
+  loadLayersModel: vi.fn(),
+  ready: vi.fn().mockResolvedValue(true),
+}))
 
 // Setup test utilities
 export const mockThreatData = {

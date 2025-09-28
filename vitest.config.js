@@ -8,6 +8,12 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
+    css: true,
+    reporters: ['verbose'],
+    // Mock external dependencies that cause issues
+    deps: {
+      inline: ['framer-motion', '@tensorflow/tfjs', 'recharts', 'lucide-react'],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

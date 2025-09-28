@@ -1,0 +1,248 @@
+// Firestore Security Rules for PQShield API
+// Comprehensive security rules for real-time vulnerability scanning platform
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isPremiumUser() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscription == 'premium';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function withinRateLimit(action) {
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let limits = userData.subscription == 'premium' ? 
+        {'scans': 10000, 'assessments': 5000} : 
+        {'scans': 100, 'assessments': 50};
+      return userData.get(action + 'Count', 0) < limits[action];
+    }
+    
+    function isValidScanData() {
+      return request.resource.data.keys().hasAll(['scanId', 'userId', 'status']) &&
+             request.resource.data.status in ['processing', 'completed', 'error'] &&
+             request.resource.data.userId == request.auth.uid;
+    }
+    
+    function isValidVulnerabilityData() {
+      return request.resource.data.keys().hasAll(['scanId', 'type', 'severity']) &&
+             request.resource.data.severity in ['critical', 'high', 'medium', 'low', 'info'];
+    }
+
+    // Users collection - user profiles and settings
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && 
+                       request.resource.data.keys().hasAll(['userId', 'email', 'subscription']) &&
+                       request.resource.data.userId == userId &&
+                       request.resource.data.subscription in ['free', 'premium'];
+      allow update: if isOwner(userId) && 
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'createdAt']));
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // Scans collection - security scan records
+    match /scans/{scanId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.userId == request.auth.uid || 
+                      resource.data.userId == 'anonymous' ||
+                      isAdmin());
+      allow create: if isAuthenticated() && 
+                       isValidScanData() &&
+                       withinRateLimit('scans');
+      allow update: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Vulnerabilities collection - individual vulnerability records
+    match /vulnerabilities/{vulnId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || 
+                      isAdmin() ||
+                      exists(/databases/$(database)/documents/scans/$(resource.data.scanId)) &&
+                      get(/databases/$(database)/documents/scans/$(resource.data.scanId)).data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && isValidVulnerabilityData();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Threats collection - real-time threat monitoring
+    match /threats/{threatId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || 
+                      resource.data.severity in ['critical', 'high'] ||
+                      isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Threat Intelligence collection - global threat data
+    match /threatIntelligence/{intelId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Compliance assessments
+    match /compliance/{complianceId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid &&
+                       withinRateLimit('assessments');
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Quantum assessments
+    match /quantumAssessments/{assessmentId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Analytics collection - user and system analytics
+    match /analytics/{analyticsId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // User tokens for FCM notifications
+    match /userTokens/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Threat statistics - global statistics
+    match /threatStats/{statsId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // System configuration (admin only)
+    match /config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Audit logs (admin only)
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Audit logs are immutable
+    }
+
+    // API usage tracking
+    match /apiUsage/{usageId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Subscription and billing
+    match /subscriptions/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // Payment records
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false; // Payment records are immutable
+    }
+
+    // Referral system
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('referrerId', '') == request.auth.uid || 
+                      resource.data.get('refereeId', '') == request.auth.uid ||
+                      isAdmin());
+      allow create: if isAuthenticated() && 
+                       (request.resource.data.referrerId == request.auth.uid ||
+                        request.resource.data.refereeId == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if false; // Referral records are immutable
+    }
+
+    // Neural network models and versions
+    match /neuralModels/{modelId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Performance metrics
+    match /performanceMetrics/{metricId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Security incidents
+    match /securityIncidents/{incidentId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('reportedBy', '') == request.auth.uid || 
+                      isPremiumUser() ||
+                      isAdmin());
+      allow create: if isAuthenticated() && 
+                       request.resource.data.reportedBy == request.auth.uid;
+      allow update: if isAdmin() || 
+                       (resource.data.get('reportedBy', '') == request.auth.uid &&
+                        resource.data.status == 'open');
+      allow delete: if isAdmin();
+    }
+
+    // Feedback and support tickets
+    match /support/{ticketId} {
+      allow read: if isAuthenticated() && 
+                     (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && 
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Notification preferences
+    match /notificationPreferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Rate limiting tracking
+    match /rateLimits/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Default deny rule for any unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

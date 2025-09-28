@@ -1,0 +1,82 @@
+{
+  "name": "pqshield-api-enhanced",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "PQShield API - Real-world vulnerability detection with neural networks and quantum-resistant security",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "deploy:workers": "wrangler deploy infrastructure/cloudflare/workers/snn-ann-edge-api.ts",
+    "deploy:d1": "wrangler d1 execute pqshield-db --file=infrastructure/cloudflare/d1/schema.sql",
+    "security:scan": "node src/security/cli-scanner.js",
+    "neural:train": "node src/neural/train-models.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.15.0",
+    "@tensorflow/tfjs-node": "^4.15.0",
+    "onnxruntime-web": "^1.16.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-confetti": "^6.1.0",
+    "lucide-react": "^0.294.0",
+    "recharts": "^2.8.0",
+    "framer-motion": "^10.16.16",
+    "jsdom": "^23.0.1",
+    "dompurify": "^3.0.7",
+    "isomorphic-dompurify": "^2.6.0",
+    "bcrypt": "^5.1.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "itty-router": "^4.0.25",
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@types/bcrypt": "^5.0.2",
+    "@types/dompurify": "^3.0.5",
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "vitest": "^1.0.4",
+    "wrangler": "^3.22.1",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "security",
+    "vulnerability-scanner",
+    "neural-networks",
+    "quantum-resistant",
+    "edge-computing",
+    "cloudflare-workers",
+    "tensorflow",
+    "cybersecurity",
+    "threat-detection",
+    "post-quantum-cryptography"
+  ],
+  "author": "PQShield Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pqshield/pqshield-api"
+  },
+  "bugs": {
+    "url": "https://github.com/pqshield/pqshield-api/issues"
+  },
+  "homepage": "https://pqshieldapi.com"
+}
