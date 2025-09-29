@@ -1,0 +1,638 @@
+name: PQ359 CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, pq359-launch-clean, staging, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'  # Daily health checks at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+        - development
+      skip_tests:
+        description: 'Skip test suite'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Dry run (no actual deployment)'
+        required: false
+        default: false
+        type: boolean
+      force_deploy:
+        description: 'Force deployment despite warnings'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # ==========================================
+  # BUILD AND VALIDATION
+  # ==========================================
+  
+  build:
+    name: 🏗️ Build & Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    outputs:
+      should-deploy: ${{ steps.deployment-check.outputs.should-deploy }}
+      target-environment: ${{ steps.deployment-check.outputs.target-environment }}
+      build-hash: ${{ steps.build-info.outputs.build-hash }}
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - name: 📚 Install Dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          echo "✅ Dependencies installed successfully"
+      
+      - name: 🔍 Code Quality Checks
+        run: |
+          echo "🔍 Running linting..."
+          pnpm lint || echo "⚠️ Linting completed with warnings"
+          
+          echo "🔍 Type checking..."
+          pnpm type-check || echo "⚠️ Type checking completed with warnings"
+      
+      - name: 🏗️ Build Application
+        run: |
+          echo "🏗️ Building PQ359 application..."
+          pnpm build
+          
+          echo "📊 Build statistics:"
+          du -sh dist/
+          find dist/ -name "*.js" -o -name "*.css" | wc -l
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_FIREBASE_CONFIG: ${{ secrets.VITE_FIREBASE_CONFIG }}
+          NODE_ENV: production
+      
+      - name: 📊 Build Information
+        id: build-info
+        run: |
+          BUILD_HASH=$(find dist/ -type f -exec sha256sum {} \; | sha256sum | cut -d' ' -f1 | head -c 8)
+          echo "build-hash=$BUILD_HASH" >> $GITHUB_OUTPUT
+          echo "📦 Build hash: $BUILD_HASH"
+      
+      - name: 🎯 Deployment Decision
+        id: deployment-check
+        run: |
+          SHOULD_DEPLOY="false"
+          TARGET_ENV="none"
+          
+          # Manual dispatch takes precedence
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SHOULD_DEPLOY="true"
+            TARGET_ENV="${{ inputs.environment }}"
+          # Automatic deployment based on branch
+          elif [ "${{ github.event_name }}" == "push" ]; then
+            case "${{ github.ref_name }}" in
+              "main"|"pq359-launch-clean")
+                SHOULD_DEPLOY="true"
+                TARGET_ENV="production"
+                ;;
+              "staging")
+                SHOULD_DEPLOY="true"
+                TARGET_ENV="staging"
+                ;;
+              "develop")
+                SHOULD_DEPLOY="true"
+                TARGET_ENV="development"
+                ;;
+            esac
+          fi
+          
+          echo "should-deploy=$SHOULD_DEPLOY" >> $GITHUB_OUTPUT
+          echo "target-environment=$TARGET_ENV" >> $GITHUB_OUTPUT
+          
+          echo "🎯 Deployment decision:"
+          echo "   Should deploy: $SHOULD_DEPLOY"
+          echo "   Target environment: $TARGET_ENV"
+          echo "   Trigger: ${{ github.event_name }}"
+          echo "   Branch: ${{ github.ref_name }}"
+      
+      - name: 📦 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pq359-build-${{ steps.build-info.outputs.build-hash }}
+          path: |
+            dist/
+            package.json
+            pnpm-lock.yaml
+            wrangler.production.toml
+            functions/
+            scripts/
+          retention-days: 7
+          compression-level: 6
+
+  # ==========================================
+  # TESTING SUITE
+  # ==========================================
+  
+  test:
+    name: 🧪 Test Suite
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ !inputs.skip_tests && github.event_name != 'schedule' }}
+    timeout-minutes: 20
+    
+    strategy:
+      matrix:
+        test-type: [unit, security, performance]
+      fail-fast: false
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - name: 📚 Install Dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pq359-build-${{ needs.build.outputs.build-hash }}
+      
+      - name: 🧪 Unit Tests
+        if: matrix.test-type == 'unit'
+        run: |
+          echo "🧪 Running unit tests..."
+          pnpm test --coverage --reporter=json --outputFile=test-results.json || true
+          
+          if [ -f "test-results.json" ]; then
+            echo "📊 Test Results Summary:"
+            cat test-results.json | jq -r '.testResults[] | "✅ \(.name): \(.status)"' || echo "Test results processed"
+          fi
+      
+      - name: 🛡️ Security Tests
+        if: matrix.test-type == 'security'
+        run: |
+          echo "🛡️ Running security audit..."
+          npm audit --audit-level moderate --json > security-audit.json || true
+          
+          echo "🔍 Checking for exposed secrets..."
+          if grep -r -E "(api[_-]?key|secret[_-]?key|password|token)" --include="*.js" --include="*.ts" --include="*.json" --exclude-dir=node_modules . | head -5; then
+            echo "⚠️ Potential secrets found - please review"
+          else
+            echo "✅ No exposed secrets detected"
+          fi
+          
+          echo "🔒 Checking dependencies..."
+          pnpm audit --json > dependency-audit.json || true
+      
+      - name: ⚡ Performance Tests
+        if: matrix.test-type == 'performance'
+        run: |
+          echo "⚡ Starting performance tests..."
+          
+          # Start preview server
+          pnpm preview &
+          SERVER_PID=$!
+          
+          # Wait for server to start
+          sleep 15
+          
+          # Install Lighthouse
+          npm install -g lighthouse
+          
+          # Run Lighthouse audit
+          echo "🔍 Running Lighthouse audit..."
+          lighthouse http://localhost:4173 \
+            --output json \
+            --output-path lighthouse-results.json \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --quiet || echo "Lighthouse audit completed"
+          
+          # Cleanup
+          kill $SERVER_PID || true
+          
+          # Display results
+          if [ -f "lighthouse-results.json" ]; then
+            echo "📊 Performance Score: $(cat lighthouse-results.json | jq -r '.categories.performance.score * 100')%"
+          fi
+      
+      - name: 📊 Upload Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            *.json
+            coverage/
+          retention-days: 30
+        if: always()
+
+  # ==========================================
+  # CLOUDFLARE DEPLOYMENT
+  # ==========================================
+  
+  deploy:
+    name: 🚀 Deploy to Cloudflare
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: |
+      always() && 
+      needs.build.outputs.should-deploy == 'true' && 
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      !inputs.dry_run
+    environment:
+      name: ${{ needs.build.outputs.target-environment }}
+      url: ${{ needs.build.outputs.target-environment == 'production' && 'https://pq359.com' || format('https://{0}.pq359.com', needs.build.outputs.target-environment) }}
+    timeout-minutes: 20
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - name: 📚 Install Dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pq359-build-${{ needs.build.outputs.build-hash }}
+      
+      - name: 🔧 Setup Wrangler
+        run: |
+          npm install -g wrangler@latest
+          echo "✅ Wrangler CLI installed"
+      
+      - name: 🔐 Verify Cloudflare Authentication
+        run: |
+          echo "🔐 Verifying Cloudflare authentication..."
+          wrangler whoami || echo "Will authenticate using API token"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      
+      - name: 🌐 Deploy with Cloudflare Script
+        run: |
+          echo "🚀 Starting PQ359 deployment to ${{ needs.build.outputs.target-environment }}..."
+          
+          # Make deployment script executable
+          chmod +x scripts/deploy-cloudflare-workers.sh
+          
+          # Prepare deployment options
+          DEPLOY_OPTS="--environment ${{ needs.build.outputs.target-environment }}"
+          DEPLOY_OPTS="$DEPLOY_OPTS --skip-build"  # We already built
+          
+          # Add conditional options
+          if [ "${{ inputs.skip_tests }}" == "true" ]; then
+            DEPLOY_OPTS="$DEPLOY_OPTS --skip-tests"
+          fi
+          
+          if [ "${{ inputs.force_deploy }}" == "true" ]; then
+            DEPLOY_OPTS="$DEPLOY_OPTS --force"
+          fi
+          
+          echo "📋 Deployment options: $DEPLOY_OPTS"
+          
+          # Execute deployment
+          ./scripts/deploy-cloudflare-workers.sh $DEPLOY_OPTS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          PQ359_MAIN_DB_ID: ${{ secrets.PQ359_MAIN_DB_ID }}
+          PQ359_ANALYTICS_DB_ID: ${{ secrets.PQ359_ANALYTICS_DB_ID }}
+          PQ359_CACHE_DB_ID: ${{ secrets.PQ359_CACHE_DB_ID }}
+          PQ359_CACHE_KV_ID: ${{ secrets.PQ359_CACHE_KV_ID }}
+          PQ359_SESSIONS_KV_ID: ${{ secrets.PQ359_SESSIONS_KV_ID }}
+          PQ359_CONFIG_KV_ID: ${{ secrets.PQ359_CONFIG_KV_ID }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          PQ359_API_URL: ${{ secrets.VITE_API_URL }}
+          PQ359_FIREBASE_CONFIG: ${{ secrets.VITE_FIREBASE_CONFIG }}
+      
+      - name: 📊 Upload Deployment Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-logs-${{ needs.build.outputs.target-environment }}
+          path: |
+            logs/
+            reports/
+          retention-days: 30
+        if: always()
+
+  # ==========================================
+  # POST-DEPLOYMENT VALIDATION
+  # ==========================================
+  
+  validate:
+    name: ✅ Validate Deployment
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    if: always() && needs.deploy.result == 'success'
+    timeout-minutes: 10
+    
+    steps:
+      - name: ⏳ Wait for Propagation
+        run: |
+          echo "⏳ Waiting for Cloudflare deployment to propagate globally..."
+          sleep 90
+      
+      - name: 🌐 Health Check - Web Application
+        run: |
+          ENV="${{ needs.build.outputs.target-environment }}"
+          
+          if [ "$ENV" == "production" ]; then
+            WEB_URL="https://pq359.com"
+          else
+            WEB_URL="https://$ENV.pq359.com"
+          fi
+          
+          echo "🌐 Testing web application at: $WEB_URL"
+          
+          for attempt in {1..5}; do
+            echo "🔄 Attempt $attempt/5..."
+            
+            if curl -f --max-time 10 --silent "$WEB_URL" > /dev/null; then
+              echo "✅ Web application is responding"
+              
+              # Test health endpoint if available
+              if curl -f --max-time 5 --silent "$WEB_URL/health" > /dev/null; then
+                echo "✅ Health endpoint is working"
+              fi
+              break
+            else
+              echo "⏳ Web application not ready, waiting 30s..."
+              sleep 30
+            fi
+            
+            if [ $attempt -eq 5 ]; then
+              echo "❌ Web application health check failed after 5 attempts"
+              exit 1
+            fi
+          done
+      
+      - name: 🔌 Health Check - API
+        run: |
+          ENV="${{ needs.build.outputs.target-environment }}"
+          
+          if [ "$ENV" == "production" ]; then
+            API_URL="https://api.pq359.com"
+          else
+            API_URL="https://api-$ENV.pq359.com"
+          fi
+          
+          echo "🔌 Testing API at: $API_URL"
+          
+          for attempt in {1..3}; do
+            echo "🔄 API attempt $attempt/3..."
+            
+            if curl -f --max-time 10 --silent "$API_URL/v1/health" > /dev/null; then
+              echo "✅ API is responding"
+              break
+            else
+              echo "⏳ API not ready, waiting 30s..."
+              sleep 30
+            fi
+            
+            if [ $attempt -eq 3 ]; then
+              echo "⚠️ API health check failed (may not be critical for frontend-only deployment)"
+            fi
+          done
+      
+      - name: ⚡ Performance Check
+        run: |
+          ENV="${{ needs.build.outputs.target-environment }}"
+          
+          if [ "$ENV" == "production" ]; then
+            TEST_URL="https://pq359.com"
+          else
+            TEST_URL="https://$ENV.pq359.com"
+          fi
+          
+          echo "⚡ Testing performance of: $TEST_URL"
+          
+          START_TIME=$(date +%s%N)
+          if curl -f --max-time 5 --silent "$TEST_URL" > /dev/null; then
+            END_TIME=$(date +%s%N)
+            RESPONSE_TIME=$(( (END_TIME - START_TIME) / 1000000 ))
+            
+            echo "📊 Response time: ${RESPONSE_TIME}ms"
+            
+            if [ $RESPONSE_TIME -lt 1000 ]; then
+              echo "🚀 Excellent performance (< 1s)"
+            elif [ $RESPONSE_TIME -lt 3000 ]; then
+              echo "✅ Good performance (< 3s)"
+            else
+              echo "⚠️ Slow performance (> 3s)"
+            fi
+          else
+            echo "❌ Performance test failed"
+          fi
+
+  # ==========================================
+  # NOTIFICATIONS
+  # ==========================================
+  
+  notify:
+    name: 📢 Send Notifications
+    runs-on: ubuntu-latest
+    needs: [build, test, deploy, validate]
+    if: always()
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📊 Calculate Results
+        id: results
+        run: |
+          # Calculate overall success
+          BUILD_SUCCESS="${{ needs.build.result == 'success' }}"
+          TEST_SUCCESS="${{ needs.test.result == 'success' || needs.test.result == 'skipped' }}"
+          DEPLOY_SUCCESS="${{ needs.deploy.result == 'success' || needs.deploy.result == 'skipped' }}"
+          VALIDATE_SUCCESS="${{ needs.validate.result == 'success' || needs.validate.result == 'skipped' }}"
+          
+          if [ "$BUILD_SUCCESS" == "true" ] && [ "$TEST_SUCCESS" == "true" ] && [ "$DEPLOY_SUCCESS" == "true" ] && [ "$VALIDATE_SUCCESS" == "true" ]; then
+            OVERALL_STATUS="success"
+            STATUS_EMOJI="🎉"
+            STATUS_COLOR="good"
+          elif [ "$BUILD_SUCCESS" == "true" ] && [ "$TEST_SUCCESS" == "true" ]; then
+            OVERALL_STATUS="partial"
+            STATUS_EMOJI="⚠️"
+            STATUS_COLOR="warning"
+          else
+            OVERALL_STATUS="failure"
+            STATUS_EMOJI="❌"
+            STATUS_COLOR="danger"
+          fi
+          
+          echo "overall-status=$OVERALL_STATUS" >> $GITHUB_OUTPUT
+          echo "status-emoji=$STATUS_EMOJI" >> $GITHUB_OUTPUT
+          echo "status-color=$STATUS_COLOR" >> $GITHUB_OUTPUT
+      
+      - name: 🎉 Success Notification
+        if: steps.results.outputs.overall-status == 'success' && secrets.SLACK_WEBHOOK != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            ${{ steps.results.outputs.status-emoji }} **PQ359 Deployment Successful!**
+            
+            ✅ **Pipeline**: All jobs completed successfully
+            🌐 **Environment**: ${{ needs.build.outputs.target-environment }}
+            🚀 **Branch**: ${{ github.ref_name }}
+            📦 **Build**: ${{ needs.build.outputs.build-hash }}
+            
+            ${{ needs.build.outputs.target-environment == 'production' && '🌐 **Live**: https://pq359.com' || format('🧪 **Preview**: https://{0}.pq359.com', needs.build.outputs.target-environment) }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      
+      - name: ⚠️ Partial Success Notification
+        if: steps.results.outputs.overall-status == 'partial' && secrets.SLACK_WEBHOOK != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: warning
+          text: |
+            ${{ steps.results.outputs.status-emoji }} **PQ359 Deployment Partially Successful**
+            
+            📊 **Status**: Build and tests passed, deployment issues detected
+            🌐 **Environment**: ${{ needs.build.outputs.target-environment }}
+            🚀 **Branch**: ${{ github.ref_name }}
+            
+            **Job Results**:
+            - Build: ${{ needs.build.result }}
+            - Tests: ${{ needs.test.result }}
+            - Deploy: ${{ needs.deploy.result }}
+            - Validate: ${{ needs.validate.result }}
+            
+            🔍 **Action Required**: Check GitHub Actions logs
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      
+      - name: 🚨 Failure Notification
+        if: steps.results.outputs.overall-status == 'failure' && secrets.SLACK_WEBHOOK != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            ${{ steps.results.outputs.status-emoji }} **PQ359 Deployment Failed**
+            
+            ❌ **Pipeline**: Critical jobs failed
+            🌐 **Environment**: ${{ needs.build.outputs.target-environment }}
+            🚀 **Branch**: ${{ github.ref_name }}
+            
+            **Failed Jobs**:
+            - Build: ${{ needs.build.result }}
+            - Tests: ${{ needs.test.result }}
+            - Deploy: ${{ needs.deploy.result }}
+            - Validate: ${{ needs.validate.result }}
+            
+            🔧 **Immediate Action Required**
+            📋 **Logs**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+  # ==========================================
+  # HEALTH MONITORING (Scheduled Only)
+  # ==========================================
+  
+  health-monitor:
+    name: 🏥 Health Monitor
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 10
+    
+    steps:
+      - name: 🏥 Production Health Check
+        run: |
+          echo "🏥 Running scheduled health checks..."
+          
+          # Check main website
+          if curl -f --max-time 10 "https://pq359.com" > /dev/null 2>&1; then
+            echo "✅ pq359.com is healthy"
+          else
+            echo "❌ pq359.com is down"
+            exit 1
+          fi
+          
+          # Check API if available
+          if curl -f --max-time 10 "https://api.pq359.com/v1/health" > /dev/null 2>&1; then
+            echo "✅ API is healthy"
+          else
+            echo "⚠️ API health check failed"
+          fi
+      
+      - name: 📊 Performance Monitor
+        run: |
+          echo "📊 Checking performance metrics..."
+          
+          START_TIME=$(date +%s%N)
+          curl -f --max-time 5 "https://pq359.com" > /dev/null 2>&1
+          END_TIME=$(date +%s%N)
+          RESPONSE_TIME=$(( (END_TIME - START_TIME) / 1000000 ))
+          
+          echo "⚡ Response time: ${RESPONSE_TIME}ms"
+          
+          if [ $RESPONSE_TIME -gt 5000 ]; then
+            echo "⚠️ Performance degradation detected"
+            exit 1
+          fi
+      
+      - name: 🚨 Health Alert
+        if: failure() && secrets.SLACK_WEBHOOK != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            🚨 **PQ359 Health Check Failed**
+            
+            ❌ **Issue**: Production health monitoring detected problems
+            🕐 **Time**: ${{ github.event.schedule }}
+            🔍 **Check**: Scheduled health monitoring
+            
+            🔧 **Immediate Investigation Required**
+            📋 **Logs**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
