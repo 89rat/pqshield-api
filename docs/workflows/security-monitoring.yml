@@ -1,0 +1,505 @@
+name: Security Monitoring & Compliance
+
+on:
+  schedule:
+    # Run security scans daily at 3 AM UTC
+    - cron: '0 3 * * *'
+  push:
+    branches: [ main, pq359-launch-clean ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - dependencies
+        - secrets
+        - compliance
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ==========================================
+  # DEPENDENCY SECURITY SCANNING
+  # ==========================================
+  
+  dependency-security:
+    name: 🔒 Dependency Security Scan
+    runs-on: ubuntu-latest
+    if: inputs.scan_type == 'full' || inputs.scan_type == 'dependencies' || github.event_name != 'workflow_dispatch'
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📚 Install Dependencies
+        run: npm ci
+      
+      - name: 🛡️ Run npm audit
+        run: |
+          npm audit --audit-level moderate --json > npm-audit-results.json || true
+          
+          # Check for critical/high vulnerabilities
+          CRITICAL=$(cat npm-audit-results.json | jq -r '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(cat npm-audit-results.json | jq -r '.metadata.vulnerabilities.high // 0')
+          
+          echo "CRITICAL_VULNS=$CRITICAL" >> $GITHUB_ENV
+          echo "HIGH_VULNS=$HIGH" >> $GITHUB_ENV
+          
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "🚨 Critical or high severity vulnerabilities found!"
+            echo "Critical: $CRITICAL, High: $HIGH"
+          else
+            echo "✅ No critical or high severity vulnerabilities found"
+          fi
+      
+      - name: 🔍 Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json-file-output=snyk-results.json
+        continue-on-error: true
+      
+      - name: 📊 Upload Security Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-results
+          path: |
+            npm-audit-results.json
+            snyk-results.json
+          retention-days: 30
+      
+      - name: 🚨 Create Security Issue
+        if: env.CRITICAL_VULNS > 0 || env.HIGH_VULNS > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Security Alert: ${process.env.CRITICAL_VULNS} Critical, ${process.env.HIGH_VULNS} High Severity Vulnerabilities`;
+            const body = `
+            ## Security Vulnerability Report
+            
+            **Critical Vulnerabilities:** ${process.env.CRITICAL_VULNS}
+            **High Severity Vulnerabilities:** ${process.env.HIGH_VULNS}
+            
+            ### Immediate Actions Required:
+            1. Review the security scan results
+            2. Update vulnerable dependencies
+            3. Run \`npm audit fix\` to auto-fix issues
+            4. Manually update dependencies that cannot be auto-fixed
+            
+            ### Scan Results:
+            - Check the \`dependency-security-results\` artifact for detailed results
+            - Review npm audit and Snyk scan outputs
+            
+            **This issue was automatically created by the Security Monitoring workflow.**
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'high-priority', 'automated']
+            });
+
+  # ==========================================
+  # SECRET SCANNING
+  # ==========================================
+  
+  secret-scanning:
+    name: 🔍 Secret Scanning
+    runs-on: ubuntu-latest
+    if: inputs.scan_type == 'full' || inputs.scan_type == 'secrets' || github.event_name != 'workflow_dispatch'
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🔍 Scan for Secrets with TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+      
+      - name: 🔍 Custom Secret Patterns Scan
+        run: |
+          echo "🔍 Scanning for custom secret patterns..."
+          
+          # Define secret patterns
+          PATTERNS=(
+            "api[_-]?key[_-]?[:=]\s*['\"][a-zA-Z0-9]{20,}['\"]"
+            "secret[_-]?key[_-]?[:=]\s*['\"][a-zA-Z0-9]{20,}['\"]"
+            "password[_-]?[:=]\s*['\"][^'\"]{8,}['\"]"
+            "token[_-]?[:=]\s*['\"][a-zA-Z0-9]{20,}['\"]"
+            "sk_live_[a-zA-Z0-9]{24,}"
+            "pk_live_[a-zA-Z0-9]{24,}"
+            "AKIA[0-9A-Z]{16}"
+            "firebase[_-]?config[_-]?[:=]"
+          )
+          
+          SECRETS_FOUND=0
+          
+          for pattern in "${PATTERNS[@]}"; do
+            echo "Checking pattern: $pattern"
+            if grep -r -E "$pattern" --include="*.js" --include="*.ts" --include="*.json" --include="*.env*" . 2>/dev/null; then
+              echo "⚠️ Potential secret found matching pattern: $pattern"
+              SECRETS_FOUND=$((SECRETS_FOUND + 1))
+            fi
+          done
+          
+          echo "SECRETS_FOUND=$SECRETS_FOUND" >> $GITHUB_ENV
+          
+          if [ $SECRETS_FOUND -eq 0 ]; then
+            echo "✅ No secrets found in custom pattern scan"
+          else
+            echo "🚨 $SECRETS_FOUND potential secrets found!"
+          fi
+      
+      - name: 🚨 Alert on Secrets Found
+        if: env.SECRETS_FOUND > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Security Alert: Potential Secrets Detected`;
+            const body = `
+            ## Secret Detection Report
+            
+            **Potential Secrets Found:** ${process.env.SECRETS_FOUND}
+            
+            ### Immediate Actions Required:
+            1. Review the code for exposed secrets
+            2. Remove any hardcoded credentials
+            3. Use environment variables or secret management
+            4. Rotate any exposed credentials immediately
+            5. Update .gitignore to prevent future exposure
+            
+            ### Security Best Practices:
+            - Never commit API keys, passwords, or tokens
+            - Use GitHub Secrets for sensitive data
+            - Implement proper secret management
+            - Regular secret scanning in CI/CD
+            
+            **This issue was automatically created by the Security Monitoring workflow.**
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'critical', 'secrets', 'automated']
+            });
+
+  # ==========================================
+  # COMPLIANCE SCANNING
+  # ==========================================
+  
+  compliance-scanning:
+    name: 📋 Compliance Scanning
+    runs-on: ubuntu-latest
+    if: inputs.scan_type == 'full' || inputs.scan_type == 'compliance' || github.event_name != 'workflow_dispatch'
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: 📚 Install Dependencies
+        run: npm ci
+      
+      - name: 📋 GDPR Compliance Check
+        run: |
+          echo "🔍 Checking GDPR compliance..."
+          
+          # Check for privacy policy
+          if find . -name "*.md" -o -name "*.html" -o -name "*.txt" | xargs grep -l -i "privacy policy" 2>/dev/null; then
+            echo "✅ Privacy policy found"
+            PRIVACY_POLICY=true
+          else
+            echo "❌ Privacy policy not found"
+            PRIVACY_POLICY=false
+          fi
+          
+          # Check for cookie consent
+          if find . -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" | xargs grep -l -i "cookie.*consent\|consent.*cookie" 2>/dev/null; then
+            echo "✅ Cookie consent implementation found"
+            COOKIE_CONSENT=true
+          else
+            echo "❌ Cookie consent implementation not found"
+            COOKIE_CONSENT=false
+          fi
+          
+          # Check for data processing notices
+          if find . -name "*.md" -o -name "*.html" -o -name "*.txt" | xargs grep -l -i "data processing\|personal data" 2>/dev/null; then
+            echo "✅ Data processing notices found"
+            DATA_PROCESSING=true
+          else
+            echo "❌ Data processing notices not found"
+            DATA_PROCESSING=false
+          fi
+          
+          echo "PRIVACY_POLICY=$PRIVACY_POLICY" >> $GITHUB_ENV
+          echo "COOKIE_CONSENT=$COOKIE_CONSENT" >> $GITHUB_ENV
+          echo "DATA_PROCESSING=$DATA_PROCESSING" >> $GITHUB_ENV
+      
+      - name: 👶 COPPA Compliance Check
+        run: |
+          echo "🔍 Checking COPPA compliance..."
+          
+          # Check for age verification
+          if find . -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" | xargs grep -l -i "age.*verification\|verify.*age\|age.*gate" 2>/dev/null; then
+            echo "✅ Age verification found"
+            AGE_VERIFICATION=true
+          else
+            echo "❌ Age verification not found"
+            AGE_VERIFICATION=false
+          fi
+          
+          # Check for parental consent
+          if find . -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx" | xargs grep -l -i "parental.*consent\|parent.*permission" 2>/dev/null; then
+            echo "✅ Parental consent implementation found"
+            PARENTAL_CONSENT=true
+          else
+            echo "❌ Parental consent implementation not found"
+            PARENTAL_CONSENT=false
+          fi
+          
+          echo "AGE_VERIFICATION=$AGE_VERIFICATION" >> $GITHUB_ENV
+          echo "PARENTAL_CONSENT=$PARENTAL_CONSENT" >> $GITHUB_ENV
+      
+      - name: 🛡️ Security Headers Check
+        run: |
+          echo "🔍 Checking security headers configuration..."
+          
+          # Check for security headers in configuration files
+          SECURITY_HEADERS=0
+          
+          if find . -name "*.js" -o -name "*.ts" -o -name "*.json" | xargs grep -l -i "x-frame-options\|content-security-policy\|strict-transport-security" 2>/dev/null; then
+            echo "✅ Security headers configuration found"
+            SECURITY_HEADERS=$((SECURITY_HEADERS + 1))
+          fi
+          
+          if find . -name "*.js" -o -name "*.ts" -o -name "*.json" | xargs grep -l -i "x-content-type-options\|x-xss-protection" 2>/dev/null; then
+            echo "✅ Additional security headers found"
+            SECURITY_HEADERS=$((SECURITY_HEADERS + 1))
+          fi
+          
+          echo "SECURITY_HEADERS=$SECURITY_HEADERS" >> $GITHUB_ENV
+          echo "Security headers score: $SECURITY_HEADERS/2"
+      
+      - name: 📊 Generate Compliance Report
+        run: |
+          echo "# 📋 Compliance Report" > compliance-report.md
+          echo "" >> compliance-report.md
+          echo "Generated on: $(date)" >> compliance-report.md
+          echo "Repository: ${{ github.repository }}" >> compliance-report.md
+          echo "Commit: ${{ github.sha }}" >> compliance-report.md
+          echo "" >> compliance-report.md
+          
+          echo "## GDPR Compliance" >> compliance-report.md
+          echo "- Privacy Policy: ${{ env.PRIVACY_POLICY == 'true' && '✅ Found' || '❌ Missing' }}" >> compliance-report.md
+          echo "- Cookie Consent: ${{ env.COOKIE_CONSENT == 'true' && '✅ Implemented' || '❌ Missing' }}" >> compliance-report.md
+          echo "- Data Processing Notices: ${{ env.DATA_PROCESSING == 'true' && '✅ Found' || '❌ Missing' }}" >> compliance-report.md
+          echo "" >> compliance-report.md
+          
+          echo "## COPPA Compliance" >> compliance-report.md
+          echo "- Age Verification: ${{ env.AGE_VERIFICATION == 'true' && '✅ Implemented' || '❌ Missing' }}" >> compliance-report.md
+          echo "- Parental Consent: ${{ env.PARENTAL_CONSENT == 'true' && '✅ Implemented' || '❌ Missing' }}" >> compliance-report.md
+          echo "" >> compliance-report.md
+          
+          echo "## Security Configuration" >> compliance-report.md
+          echo "- Security Headers: ${{ env.SECURITY_HEADERS }}/2 implemented" >> compliance-report.md
+          echo "" >> compliance-report.md
+          
+          # Calculate compliance score
+          TOTAL_CHECKS=7
+          PASSED_CHECKS=0
+          
+          [ "${{ env.PRIVACY_POLICY }}" == "true" ] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [ "${{ env.COOKIE_CONSENT }}" == "true" ] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [ "${{ env.DATA_PROCESSING }}" == "true" ] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [ "${{ env.AGE_VERIFICATION }}" == "true" ] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          [ "${{ env.PARENTAL_CONSENT }}" == "true" ] && PASSED_CHECKS=$((PASSED_CHECKS + 1))
+          PASSED_CHECKS=$((PASSED_CHECKS + ${{ env.SECURITY_HEADERS }}))
+          
+          COMPLIANCE_SCORE=$((PASSED_CHECKS * 100 / TOTAL_CHECKS))
+          
+          echo "## Overall Compliance Score" >> compliance-report.md
+          echo "**Score: ${COMPLIANCE_SCORE}%** (${PASSED_CHECKS}/${TOTAL_CHECKS} checks passed)" >> compliance-report.md
+          echo "" >> compliance-report.md
+          
+          if [ $COMPLIANCE_SCORE -lt 80 ]; then
+            echo "⚠️ **Action Required:** Compliance score is below 80%" >> compliance-report.md
+            echo "Please address the missing compliance requirements." >> compliance-report.md
+          else
+            echo "✅ **Good Compliance:** Score is above 80%" >> compliance-report.md
+          fi
+          
+          echo "COMPLIANCE_SCORE=$COMPLIANCE_SCORE" >> $GITHUB_ENV
+      
+      - name: 📋 Upload Compliance Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: compliance-report.md
+      
+      - name: 🚨 Create Compliance Issue
+        if: env.COMPLIANCE_SCORE < 80
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `📋 Compliance Alert: Score ${process.env.COMPLIANCE_SCORE}% (Below 80%)`;
+            const body = `
+            ## Compliance Report
+            
+            **Overall Score:** ${process.env.COMPLIANCE_SCORE}% 
+            **Status:** ${process.env.COMPLIANCE_SCORE >= 80 ? '✅ Compliant' : '⚠️ Needs Attention'}
+            
+            ### GDPR Compliance
+            - Privacy Policy: ${process.env.PRIVACY_POLICY === 'true' ? '✅' : '❌'}
+            - Cookie Consent: ${process.env.COOKIE_CONSENT === 'true' ? '✅' : '❌'}
+            - Data Processing Notices: ${process.env.DATA_PROCESSING === 'true' ? '✅' : '❌'}
+            
+            ### COPPA Compliance
+            - Age Verification: ${process.env.AGE_VERIFICATION === 'true' ? '✅' : '❌'}
+            - Parental Consent: ${process.env.PARENTAL_CONSENT === 'true' ? '✅' : '❌'}
+            
+            ### Security Configuration
+            - Security Headers: ${process.env.SECURITY_HEADERS}/2 implemented
+            
+            ### Recommended Actions:
+            1. Review the compliance report artifact for detailed findings
+            2. Implement missing privacy and security features
+            3. Add proper documentation for data handling
+            4. Ensure age-appropriate protections are in place
+            5. Configure security headers properly
+            
+            **This issue was automatically created by the Security Monitoring workflow.**
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['compliance', 'security', 'automated']
+            });
+
+  # ==========================================
+  # SECURITY SUMMARY & NOTIFICATIONS
+  # ==========================================
+  
+  security-summary:
+    name: 📊 Security Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-security, secret-scanning, compliance-scanning]
+    if: always()
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📊 Calculate Security Score
+        id: security-score
+        run: |
+          # Initialize scores
+          DEPENDENCY_SCORE=100
+          SECRET_SCORE=100
+          COMPLIANCE_SCORE=80
+          
+          # Adjust scores based on findings
+          if [ "${{ needs.dependency-security.outputs.CRITICAL_VULNS || 0 }}" -gt 0 ]; then
+            DEPENDENCY_SCORE=0
+          elif [ "${{ needs.dependency-security.outputs.HIGH_VULNS || 0 }}" -gt 0 ]; then
+            DEPENDENCY_SCORE=50
+          fi
+          
+          if [ "${{ needs.secret-scanning.outputs.SECRETS_FOUND || 0 }}" -gt 0 ]; then
+            SECRET_SCORE=0
+          fi
+          
+          # Get compliance score from previous job
+          COMPLIANCE_SCORE="${{ needs.compliance-scanning.outputs.COMPLIANCE_SCORE || 80 }}"
+          
+          # Calculate overall security score
+          OVERALL_SCORE=$(( (DEPENDENCY_SCORE + SECRET_SCORE + COMPLIANCE_SCORE) / 3 ))
+          
+          echo "DEPENDENCY_SCORE=$DEPENDENCY_SCORE" >> $GITHUB_OUTPUT
+          echo "SECRET_SCORE=$SECRET_SCORE" >> $GITHUB_OUTPUT
+          echo "COMPLIANCE_SCORE=$COMPLIANCE_SCORE" >> $GITHUB_OUTPUT
+          echo "OVERALL_SCORE=$OVERALL_SCORE" >> $GITHUB_OUTPUT
+      
+      - name: 📋 Generate Security Summary
+        run: |
+          echo "# 🛡️ Security Monitoring Summary" > security-summary.md
+          echo "" >> security-summary.md
+          echo "**Date:** $(date)" >> security-summary.md
+          echo "**Repository:** ${{ github.repository }}" >> security-summary.md
+          echo "**Branch:** ${{ github.ref_name }}" >> security-summary.md
+          echo "**Overall Security Score:** ${{ steps.security-score.outputs.OVERALL_SCORE }}%" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          echo "## Security Scores" >> security-summary.md
+          echo "| Category | Score | Status |" >> security-summary.md
+          echo "|----------|-------|--------|" >> security-summary.md
+          echo "| Dependencies | ${{ steps.security-score.outputs.DEPENDENCY_SCORE }}% | ${{ steps.security-score.outputs.DEPENDENCY_SCORE >= 80 && '✅ Good' || '⚠️ Needs Attention' }} |" >> security-summary.md
+          echo "| Secrets | ${{ steps.security-score.outputs.SECRET_SCORE }}% | ${{ steps.security-score.outputs.SECRET_SCORE >= 80 && '✅ Good' || '⚠️ Needs Attention' }} |" >> security-summary.md
+          echo "| Compliance | ${{ steps.security-score.outputs.COMPLIANCE_SCORE }}% | ${{ steps.security-score.outputs.COMPLIANCE_SCORE >= 80 && '✅ Good' || '⚠️ Needs Attention' }} |" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          if [ "${{ steps.security-score.outputs.OVERALL_SCORE }}" -ge 80 ]; then
+            echo "## ✅ Security Status: GOOD" >> security-summary.md
+            echo "Your application meets security standards." >> security-summary.md
+          else
+            echo "## ⚠️ Security Status: NEEDS ATTENTION" >> security-summary.md
+            echo "Please review and address the security issues identified." >> security-summary.md
+          fi
+      
+      - name: 📋 Upload Security Summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: security-summary.md
+      
+      - name: 🔔 Slack Notification
+        if: steps.security-score.outputs.OVERALL_SCORE < 80
+        uses: 8398a7/action-slack@v3
+        with:
+          status: warning
+          text: |
+            🛡️ **PQ359 Security Alert**
+            
+            **Overall Security Score:** ${{ steps.security-score.outputs.OVERALL_SCORE }}%
+            
+            **Scores:**
+            - Dependencies: ${{ steps.security-score.outputs.DEPENDENCY_SCORE }}%
+            - Secrets: ${{ steps.security-score.outputs.SECRET_SCORE }}%
+            - Compliance: ${{ steps.security-score.outputs.COMPLIANCE_SCORE }}%
+            
+            🔍 **Action Required:** Review security issues in GitHub Actions
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        if: env.SLACK_WEBHOOK_URL != ''
