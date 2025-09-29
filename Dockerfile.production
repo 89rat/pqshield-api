@@ -1,0 +1,125 @@
+# Multi-stage build for PQ359 production deployment
+FROM node:18-alpine AS base
+
+# Install security updates and required packages
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    curl \
+    dumb-init \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S pq359 -u 1001
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json pnpm-lock.yaml ./
+COPY .npmrc ./
+
+# Install pnpm
+RUN npm install -g pnpm@8
+
+# Development stage
+FROM base AS development
+RUN pnpm install --frozen-lockfile
+COPY . .
+EXPOSE 5173
+CMD ["pnpm", "dev"]
+
+# Build stage
+FROM base AS build
+RUN pnpm install --frozen-lockfile --prod=false
+COPY . .
+
+# Build the application
+RUN pnpm run build
+
+# Security scan
+RUN pnpm audit --audit-level moderate || true
+
+# Production stage
+FROM base AS production
+
+# Install only production dependencies
+RUN pnpm install --frozen-lockfile --prod
+
+# Copy built application
+COPY --from=build --chown=pq359:nodejs /app/dist ./dist
+COPY --from=build --chown=pq359:nodejs /app/package.json ./
+COPY --from=build --chown=pq359:nodejs /app/server.js ./
+
+# Create health check endpoint
+COPY --chown=pq359:nodejs <<EOF /app/health.js
+const http = require('http');
+const server = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0'
+    }));
+  } else {
+    res.writeHead(404);
+    res.end('Not Found');
+  }
+});
+server.listen(3000, () => console.log('PQ359 health server running on port 3000'));
+EOF
+
+# Set security headers and environment
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=1024"
+
+# Switch to non-root user
+USER pq359
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "health.js"]
+
+# Production server stage (for full-stack deployment)
+FROM nginx:alpine AS server
+
+# Install security updates
+RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
+
+# Copy built assets
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.production.conf /etc/nginx/nginx.conf
+
+# Create nginx user and set permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Security headers configuration
+COPY <<EOF /etc/nginx/conf.d/security.conf
+# Security headers
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-XSS-Protection "1; mode=block" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.pq359.com https://*.firebase.com https://*.cloudflare.com; frame-src 'self' https://www.google.com;" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+EOF
+
+# Health check for nginx
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:80/ || exit 1
+
+EXPOSE 80 443
+
+CMD ["nginx", "-g", "daemon off;"]
